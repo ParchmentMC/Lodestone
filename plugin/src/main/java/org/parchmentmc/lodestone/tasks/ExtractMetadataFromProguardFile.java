@@ -46,7 +46,7 @@ public abstract class ExtractMetadataFromProguardFile extends DefaultTask
         this.sourceFile.convention(this.sourceDirectory.file(this.sourceFileName));
 
         this.targetDirectory = getProject().getObjects().directoryProperty();
-        this.sourceDirectory.convention(this.getProject().getLayout().getBuildDirectory().dir("lodestone").flatMap(s -> s.dir(this.mcVersion)));
+        this.targetDirectory.convention(this.getProject().getLayout().getBuildDirectory().dir("lodestone").flatMap(s -> s.dir(this.mcVersion)));
 
         this.targetFileName = getProject().getObjects().property(String.class);
         this.targetFileName.convention("proguard.json");

@@ -66,7 +66,7 @@ public abstract class MergeMetadata extends DefaultTask
         this.rightSourceFile.convention(this.rightSourceDirectory.file(this.rightSourceFileName));
 
         this.targetDirectory = getProject().getObjects().directoryProperty();
-        this.rightSourceDirectory.convention(this.getProject().getLayout().getBuildDirectory().dir("lodestone").flatMap(s -> s.dir(this.mcVersion)));
+        this.targetDirectory.convention(this.getProject().getLayout().getBuildDirectory().dir("lodestone").flatMap(s -> s.dir(this.mcVersion)));
 
         this.targetFileName = getProject().getObjects().property(String.class);
         this.targetFileName.convention("merged.json");
@@ -116,7 +116,7 @@ public abstract class MergeMetadata extends DefaultTask
         for (final ClassMetadata aClass : signatureRemappedData.getClasses())
         {
             bouncerRemappedDataBuilder.addClass(
-              adaptBouncers(
+              adaptMethodReferences(
                 aClass,
                 obfToMojClassNameMap,
                 obfKeyToMojMethodNameMap
@@ -284,7 +284,7 @@ public abstract class MergeMetadata extends DefaultTask
         return classMetadataBuilder.build();
     }
 
-    private static ClassMetadata adaptBouncers(
+    private static ClassMetadata adaptMethodReferences(
       final ClassMetadata classMetadata,
       final Map<String, String> obfToMojNameMap,
       final Map<String, MethodMetadata> obfKeyToMojMethodNameMap
@@ -302,7 +302,7 @@ public abstract class MergeMetadata extends DefaultTask
 
         final ClassMetadataBuilder classMetadataBuilder = ClassMetadataBuilder.create(classMetadata)
                                                             .withInnerClasses(classMetadata.getInnerClasses().stream()
-                                                                                .map(inner -> adaptBouncers(inner, obfToMojNameMap, obfKeyToMojMethodNameMap))
+                                                                                .map(inner -> adaptMethodReferences(inner, obfToMojNameMap, obfKeyToMojMethodNameMap))
                                                                                 .collect(Collectors.toSet()))
                                                             .withMethods(classMetadata.getMethods().stream()
                                                                            .map(method -> {
@@ -388,6 +388,78 @@ public abstract class MergeMetadata extends DefaultTask
                                                                                    }
 
                                                                                    builder.withBouncingTarget(bouncingBuilder.build());
+                                                                               }
+
+                                                                               if (method.getParent().isPresent()) {
+                                                                                   final String obfuscatedKey = buildMethodKey(
+                                                                                     method.getParent().get()
+                                                                                   );
+                                                                                   final MethodMetadata methodMetadata = obfKeyToMojMethodNameMap.get(obfuscatedKey);
+
+                                                                                   if (methodMetadata != null) {
+                                                                                       final MethodReferenceBuilder parentBuilder = MethodReferenceBuilder.create()
+                                                                                                                                      .withOwner(methodMetadata.getOwner())
+                                                                                                                                      .withName(methodMetadata.getName())
+                                                                                                                                      .withDescriptor(methodMetadata.getDescriptor())
+                                                                                                                                      .withSignature(methodMetadata.getSignature());
+
+                                                                                       if (!methodMetadata.getSignature().hasMojangName() && methodMetadata.getSignature().hasObfuscatedName())
+                                                                                       {
+                                                                                           parentBuilder.withSignature(
+                                                                                             NamedBuilder.create(methodMetadata.getSignature())
+                                                                                               .withMojang(
+                                                                                                 remapper.mapSignature(
+                                                                                                   methodMetadata.getSignature()
+                                                                                                     .getObfuscatedName()
+                                                                                                     .orElseThrow(() -> new IllegalStateException("Missing obfuscated method signature.")),
+                                                                                                   false
+                                                                                                 )
+                                                                                               )
+                                                                                               .build()
+                                                                                           );
+                                                                                       }
+
+                                                                                       builder.withParent(parentBuilder.build());
+                                                                                   }
+                                                                               }
+
+                                                                               if (!method.getOverrides().isEmpty()) {
+                                                                                   final LinkedHashSet<MethodReference> overrides = new LinkedHashSet<>();
+                                                                                   for (final MethodReference override : method.getOverrides())
+                                                                                   {
+                                                                                       final String obfuscatedKey = buildMethodKey(
+                                                                                         override
+                                                                                       );
+                                                                                       final MethodMetadata methodMetadata = obfKeyToMojMethodNameMap.get(obfuscatedKey);
+
+                                                                                       if (methodMetadata != null) {
+                                                                                           final MethodReferenceBuilder overrideBuilder = MethodReferenceBuilder.create()
+                                                                                                                                          .withOwner(methodMetadata.getOwner())
+                                                                                                                                          .withName(methodMetadata.getName())
+                                                                                                                                          .withDescriptor(methodMetadata.getDescriptor())
+                                                                                                                                          .withSignature(methodMetadata.getSignature());
+
+                                                                                           if (!methodMetadata.getSignature().hasMojangName() && methodMetadata.getSignature().hasObfuscatedName())
+                                                                                           {
+                                                                                               overrideBuilder.withSignature(
+                                                                                                 NamedBuilder.create(methodMetadata.getSignature())
+                                                                                                   .withMojang(
+                                                                                                     remapper.mapSignature(
+                                                                                                       methodMetadata.getSignature()
+                                                                                                         .getObfuscatedName()
+                                                                                                         .orElseThrow(() -> new IllegalStateException("Missing obfuscated method signature.")),
+                                                                                                       false
+                                                                                                     )
+                                                                                                   )
+                                                                                                   .build()
+                                                                                               );
+                                                                                           }
+
+                                                                                           overrides.add(overrideBuilder.build());
+                                                                                       }
+                                                                                   }
+
+                                                                                   builder.withOverrides(overrides);
                                                                                }
 
                                                                                return builder.build();

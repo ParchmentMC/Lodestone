@@ -18,8 +18,7 @@ import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
 import java.time.OffsetDateTime;
 
-import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
-import static java.nio.file.StandardOpenOption.WRITE;
+import static java.nio.file.StandardOpenOption.*;
 
 @SuppressWarnings("UnstableApiUsage")
 public abstract class DownloadVersionMetadata extends DefaultTask
@@ -115,8 +114,9 @@ public abstract class DownloadVersionMetadata extends DefaultTask
             final String versionUrl = versionData.getUrl();
             final URL url = new URL(versionUrl);
 
+            target.getParentFile().mkdirs();
             try (final ReadableByteChannel input = Channels.newChannel(url.openStream());
-                 final FileChannel output = FileChannel.open(target.toPath(), WRITE, TRUNCATE_EXISTING))
+                 final FileChannel output = FileChannel.open(target.toPath(), WRITE, CREATE, TRUNCATE_EXISTING))
             {
                 output.transferFrom(input, 0, Long.MAX_VALUE);
             }

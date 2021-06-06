@@ -19,8 +19,7 @@ import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
 
-import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
-import static java.nio.file.StandardOpenOption.WRITE;
+import static java.nio.file.StandardOpenOption.*;
 
 @SuppressWarnings("UnstableApiUsage")
 public abstract class DownloadLauncherMetadata extends DefaultTask
@@ -58,8 +57,9 @@ public abstract class DownloadLauncherMetadata extends DefaultTask
         {
             final URL launcherUrl = new URL(Constants.MOJANG_LAUNCHER_URL);
 
+            target.getParentFile().mkdirs();
             try (final ReadableByteChannel input = Channels.newChannel(launcherUrl.openStream());
-                 final FileChannel output = FileChannel.open(target.toPath(), WRITE, TRUNCATE_EXISTING))
+                 final FileChannel output = FileChannel.open(target.toPath(), WRITE, CREATE, TRUNCATE_EXISTING))
             {
                 output.transferFrom(input, 0, Long.MAX_VALUE);
             }

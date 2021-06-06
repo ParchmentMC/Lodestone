@@ -20,8 +20,7 @@ import java.nio.channels.ReadableByteChannel;
 import java.time.OffsetDateTime;
 import java.util.Map;
 
-import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
-import static java.nio.file.StandardOpenOption.WRITE;
+import static java.nio.file.StandardOpenOption.*;
 
 @SuppressWarnings("UnstableApiUsage")
 public abstract class DownloadVersion extends DefaultTask
@@ -87,8 +86,9 @@ public abstract class DownloadVersion extends DefaultTask
                 String fileName = fileInfo.getUrl().substring(fileInfo.getUrl().lastIndexOf('/') + 1);
                 final File target = new File(outputDirectory, fileName);
 
+                target.getParentFile().mkdirs();
                 try (final ReadableByteChannel input = Channels.newChannel(downloadUrl.openStream());
-                     final FileChannel output = FileChannel.open(target.toPath(), WRITE, TRUNCATE_EXISTING))
+                     final FileChannel output = FileChannel.open(target.toPath(), WRITE, CREATE, TRUNCATE_EXISTING))
                 {
                     output.transferFrom(input, 0, Long.MAX_VALUE);
                 }
@@ -102,8 +102,9 @@ public abstract class DownloadVersion extends DefaultTask
                 targetFile.getParentFile().mkdirs();
                 final URL targetUrl = new URL(library.getDownloads().getArtifact().getUrl());
 
+                targetFile.getParentFile().mkdirs();
                 try (final ReadableByteChannel input = Channels.newChannel(targetUrl.openStream());
-                     final FileChannel output = FileChannel.open(targetFile.toPath(), WRITE, TRUNCATE_EXISTING))
+                     final FileChannel output = FileChannel.open(targetFile.toPath(), WRITE, CREATE, TRUNCATE_EXISTING))
                 {
                     output.transferFrom(input, 0, Long.MAX_VALUE);
                 }
