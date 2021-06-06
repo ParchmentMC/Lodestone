@@ -1,0 +1,28 @@
+plugins {
+    // Apply the Java Gradle plugin development plugin to add support for developing Gradle plugins
+    id 'java-gradle-plugin'
+    id 'org.parchmentmc.writtenbooks' version "${versions_plugins_writtenbooks}" apply false
+}
+
+apply plugin: 'org.parchmentmc.writtenbooks'
+
+dependencies {
+    api "org.ow2.asm:asm:${versions_dependencies_asm}"
+    api "org.ow2.asm:asm-commons:${versions_dependencies_asm}"
+    api "org.ow2.asm:asm-tree:${versions_dependencies_asm}"
+    api "org.ow2.asm:asm-util:${versions_dependencies_asm}"
+    api "org.parchmentmc:feather:${versions_dependencies_feather}"
+    api "org.parchmentmc.feather:io-gson:${versions_dependencies_feather}"
+    api "org.parchmentmc.feather:io-proguard:${versions_dependencies_feather}"
+    api "org.parchmentmc.feather:utils:${versions_dependencies_feather}"
+    testImplementation "junit:junit:${versions_dependencies_junit}"
+}
+
+gradlePlugin {
+    plugins {
+        lodestone {
+            id = 'org.parchmentmc.lodestone'
+            implementationClass = 'org.parchmentmc.lodestone.LodestonePlugin'
+        }
+    }
+}
