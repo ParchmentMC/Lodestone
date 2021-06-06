@@ -5,13 +5,11 @@ import com.google.gson.GsonBuilder;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.file.DirectoryProperty;
 import org.gradle.api.file.RegularFileProperty;
-import org.gradle.api.internal.file.FileFactory;
 import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.*;
 import org.parchmentmc.feather.io.gson.OffsetDateTimeAdapter;
 import org.parchmentmc.feather.manifests.LauncherManifest;
 
-import javax.inject.Inject;
 import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -34,8 +32,7 @@ public abstract class DownloadVersionMetadata extends DefaultTask
 
     private final Property<String> mcVersion;
 
-    @Inject
-    public DownloadVersionMetadata(final FileFactory fileFactory)
+    public DownloadVersionMetadata()
     {
         if (getProject().getGradle().getStartParameter().isOffline())
         {
@@ -43,22 +40,22 @@ public abstract class DownloadVersionMetadata extends DefaultTask
         }
 
         this.mcVersion = getProject().getObjects().property(String.class);
-        this.mcVersion.convention(getProject().provider(() -> "latest"));
+        this.mcVersion.convention("latest");
 
         this.sourceDirectory = getProject().getObjects().directoryProperty();
-        this.sourceDirectory.convention(this.getProject().provider(() -> fileFactory.dir(new File(getProject().getBuildDir(), "lodestone"))));
+        this.sourceDirectory.convention(this.getProject().getLayout().getBuildDirectory().dir("lodestone"));
 
         this.sourceFileName = getProject().getObjects().property(String.class);
-        this.sourceFileName.convention(this.getProject().provider(() -> "launcher.json"));
+        this.sourceFileName.convention("launcher.json");
 
         this.sourceFile = getProject().getObjects().fileProperty();
         this.sourceFile.convention(this.sourceDirectory.file(this.sourceFileName));
 
         this.targetDirectory = getProject().getObjects().directoryProperty();
-        this.targetDirectory.convention(this.getProject().provider(() -> fileFactory.dir(new File(getProject().getBuildDir(), "lodestone"))));
+        this.targetDirectory.convention(this.getProject().getLayout().getBuildDirectory().dir("lodestone"));
 
         this.targetFileName = getProject().getObjects().property(String.class);
-        this.targetFileName.convention(this.getProject().provider(() -> this.mcVersion.getOrElse("latest") + ".json"));
+        this.targetFileName.convention(this.mcVersion.map(s -> s + ".json"));
 
         this.targetFile = getProject().getObjects().fileProperty();
         this.targetFile.convention(this.targetDirectory.file(this.targetFileName));

@@ -5,27 +5,18 @@ import com.google.gson.GsonBuilder;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.file.DirectoryProperty;
 import org.gradle.api.file.RegularFileProperty;
-import org.gradle.api.internal.file.FileFactory;
 import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.OutputFile;
 import org.gradle.api.tasks.TaskAction;
-import org.parchmentmc.feather.io.gson.OffsetDateTimeAdapter;
 import org.parchmentmc.feather.io.gson.SimpleVersionAdapter;
 import org.parchmentmc.feather.io.gson.metadata.MetadataAdapterFactory;
 import org.parchmentmc.feather.io.proguard.MetadataProguardParser;
-import org.parchmentmc.feather.manifests.LauncherManifest;
 import org.parchmentmc.feather.metadata.SourceMetadata;
 import org.parchmentmc.feather.util.SimpleVersion;
 
-import javax.inject.Inject;
 import java.io.*;
 import java.net.MalformedURLException;
-import java.net.URL;
-import java.nio.channels.Channels;
-import java.nio.channels.FileChannel;
-import java.nio.channels.ReadableByteChannel;
-import java.time.OffsetDateTime;
 
 @SuppressWarnings("UnstableApiUsage")
 public abstract class ExtractMetadataFromProguardFile extends DefaultTask
@@ -40,8 +31,7 @@ public abstract class ExtractMetadataFromProguardFile extends DefaultTask
 
     private final Property<String> mcVersion;
 
-    @Inject
-    public ExtractMetadataFromProguardFile(final FileFactory fileFactory)
+    public ExtractMetadataFromProguardFile()
     {
         if (getProject().getGradle().getStartParameter().isOffline())
         {
@@ -49,22 +39,22 @@ public abstract class ExtractMetadataFromProguardFile extends DefaultTask
         }
 
         this.mcVersion = getProject().getObjects().property(String.class);
-        this.mcVersion.convention(getProject().provider(() -> "latest"));
+        this.mcVersion.convention("latest");
 
         this.sourceDirectory = getProject().getObjects().directoryProperty();
-        this.sourceDirectory.convention(this.getProject().provider(() -> fileFactory.dir(new File(getProject().getBuildDir(), "lodestone" + File.separator + this.mcVersion.getOrElse("latest")))));
+        this.sourceDirectory.convention(this.getProject().getLayout().getBuildDirectory().dir("lodestone").flatMap(s -> s.dir(this.mcVersion)));
 
         this.sourceFileName = getProject().getObjects().property(String.class);
-        this.sourceFileName.convention(this.getProject().provider(() -> "client.txt"));
+        this.sourceFileName.convention("client.txt");
 
         this.sourceFile = getProject().getObjects().fileProperty();
         this.sourceFile.convention(this.sourceDirectory.file(this.sourceFileName));
 
         this.targetDirectory = getProject().getObjects().directoryProperty();
-        this.targetDirectory.convention(this.getProject().provider(() -> fileFactory.dir(new File(getProject().getBuildDir(), "lodestone" + File.separator + this.mcVersion.getOrElse("latest")))));
+        this.sourceDirectory.convention(this.getProject().getLayout().getBuildDirectory().dir("lodestone").flatMap(s -> s.dir(this.mcVersion)));
 
         this.targetFileName = getProject().getObjects().property(String.class);
-        this.targetFileName.convention(this.getProject().provider(() -> "proguard.json"));
+        this.targetFileName.convention("proguard.json");
 
         this.targetFile = getProject().getObjects().fileProperty();
         this.targetFile.convention(this.targetDirectory.file(this.targetFileName));

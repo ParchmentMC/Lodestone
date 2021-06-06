@@ -4,7 +4,6 @@ import org.gradle.api.DefaultTask;
 import org.gradle.api.file.DirectoryProperty;
 import org.gradle.api.file.RegularFile;
 import org.gradle.api.file.RegularFileProperty;
-import org.gradle.api.internal.file.FileFactory;
 import org.gradle.api.provider.Property;
 import org.gradle.api.provider.Provider;
 import org.gradle.api.tasks.OutputDirectory;
@@ -12,7 +11,6 @@ import org.gradle.api.tasks.OutputFile;
 import org.gradle.api.tasks.TaskAction;
 import org.parchmentmc.lodestone.util.Constants;
 
-import javax.inject.Inject;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -30,8 +28,7 @@ public abstract class DownloadLauncherMetadata extends DefaultTask
 
     private final Property<String>    fileName;
 
-    @Inject
-    public DownloadLauncherMetadata(final FileFactory fileFactory)
+    public DownloadLauncherMetadata()
     {
         if (getProject().getGradle().getStartParameter().isOffline())
         {
@@ -39,10 +36,10 @@ public abstract class DownloadLauncherMetadata extends DefaultTask
         }
 
         this.destinationDirectory = getProject().getObjects().directoryProperty();
-        this.destinationDirectory.convention(this.getProject().provider(() -> fileFactory.dir(new File(getProject().getBuildDir(), "lodestone"))));
+        this.destinationDirectory.convention(this.getProject().getLayout().getBuildDirectory().dir("lodestone"));
 
         this.fileName = getProject().getObjects().property(String.class);
-        this.fileName.convention(this.getProject().provider(() -> "launcher.json"));
+        this.fileName.convention("launcher.json");
 
         this.targetFile = getProject().getObjects().fileProperty();
         this.targetFile.convention(this.destinationDirectory.file(this.fileName));

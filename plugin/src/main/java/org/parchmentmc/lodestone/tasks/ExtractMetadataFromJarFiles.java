@@ -3,30 +3,22 @@ package org.parchmentmc.lodestone.tasks;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import org.gradle.api.DefaultTask;
-import org.gradle.api.Transformer;
-import org.gradle.api.file.Directory;
 import org.gradle.api.file.DirectoryProperty;
 import org.gradle.api.file.RegularFileProperty;
-import org.gradle.api.internal.file.FileFactory;
-import org.gradle.api.internal.file.FilePropertyFactory;
 import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.OutputFile;
 import org.gradle.api.tasks.TaskAction;
-import org.gradle.internal.impldep.org.apache.commons.io.FileUtils;
 import org.parchmentmc.feather.io.gson.SimpleVersionAdapter;
 import org.parchmentmc.feather.io.gson.metadata.MetadataAdapterFactory;
 import org.parchmentmc.feather.metadata.*;
 import org.parchmentmc.feather.named.Named;
-import org.parchmentmc.feather.named.NamedBuilder;
 import org.parchmentmc.feather.util.SimpleVersion;
-import org.parchmentmc.feather.utils.RemapHelper;
 import org.parchmentmc.lodestone.asm.CodeCleaner;
 import org.parchmentmc.lodestone.asm.CodeTree;
 import org.parchmentmc.lodestone.asm.MutableClassInfo;
 import org.parchmentmc.lodestone.converter.ClassConverter;
 
-import javax.inject.Inject;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
@@ -36,12 +28,9 @@ import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.PathMatcher;
-import java.nio.file.attribute.BasicFileAttributes;
-import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.BiPredicate;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -60,8 +49,7 @@ public abstract class ExtractMetadataFromJarFiles extends DefaultTask
 
     private final Property<String> mcVersion;
 
-    @Inject
-    public ExtractMetadataFromJarFiles(final FileFactory fileFactory, final FilePropertyFactory filePropertyFactory)
+    public ExtractMetadataFromJarFiles()
     {
         if (getProject().getGradle().getStartParameter().isOffline())
         {
@@ -69,25 +57,25 @@ public abstract class ExtractMetadataFromJarFiles extends DefaultTask
         }
 
         this.mcVersion = getProject().getObjects().property(String.class);
-        this.mcVersion.convention(getProject().provider(() -> "latest"));
+        this.mcVersion.convention("latest");
 
         this.sourceDirectory = getProject().getObjects().directoryProperty();
-        this.sourceDirectory.convention(this.getProject().provider(() -> fileFactory.dir(new File(getProject().getBuildDir(), "lodestone" + File.separator + this.mcVersion.getOrElse("latest")))));
+        this.sourceDirectory.convention(this.getProject().getLayout().getBuildDirectory().dir("lodestone").flatMap(s -> s.dir(this.mcVersion)));
 
         this.sourceFileName = getProject().getObjects().property(String.class);
-        this.sourceFileName.convention(this.getProject().provider(() -> "client.jar"));
+        this.sourceFileName.convention("client.jar");
 
         this.sourceFile = getProject().getObjects().fileProperty();
         this.sourceFile.convention(this.sourceDirectory.file(this.sourceFileName));
 
         this.librariesDirectory = getProject().getObjects().directoryProperty();
-        this.librariesDirectory.convention(this.getProject().provider(() -> this.sourceFile.getAsFile().get()).map(file -> fileFactory.dir(new File(file.getParentFile(), "libraries"))));
+        this.librariesDirectory.convention(this.sourceDirectory.map(s -> s.dir("libraries")));
 
         this.targetDirectory = getProject().getObjects().directoryProperty();
-        this.targetDirectory.convention(this.getProject().provider(() -> fileFactory.dir(new File(getProject().getBuildDir(), "lodestone" + File.separator + this.mcVersion.getOrElse("latest")))));
+        this.targetDirectory.convention(this.getProject().getLayout().getBuildDirectory().dir("lodestone").flatMap(s -> s.dir(this.mcVersion)));
 
         this.targetFileName = getProject().getObjects().property(String.class);
-        this.targetFileName.convention(this.getProject().provider(() -> "metadata.json"));
+        this.targetFileName.convention("metadata.json");
 
         this.targetFile = getProject().getObjects().fileProperty();
         this.targetFile.convention(this.targetDirectory.file(this.targetFileName));

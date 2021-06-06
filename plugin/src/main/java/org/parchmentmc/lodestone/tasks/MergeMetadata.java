@@ -5,8 +5,6 @@ import com.google.gson.GsonBuilder;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.file.DirectoryProperty;
 import org.gradle.api.file.RegularFileProperty;
-import org.gradle.api.internal.file.FileFactory;
-import org.gradle.api.internal.file.FilePropertyFactory;
 import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.OutputFile;
@@ -20,7 +18,6 @@ import org.parchmentmc.feather.util.SimpleVersion;
 import org.parchmentmc.feather.utils.MetadataMerger;
 import org.parchmentmc.lodestone.util.ASMRemapper;
 
-import javax.inject.Inject;
 import java.io.*;
 import java.net.MalformedURLException;
 import java.util.HashMap;
@@ -45,8 +42,7 @@ public abstract class MergeMetadata extends DefaultTask
 
     private final Property<String> mcVersion;
 
-    @Inject
-    public MergeMetadata(final FileFactory fileFactory, final FilePropertyFactory filePropertyFactory)
+    public MergeMetadata()
     {
         if (getProject().getGradle().getStartParameter().isOffline())
         {
@@ -57,34 +53,28 @@ public abstract class MergeMetadata extends DefaultTask
         this.mcVersion.convention(getProject().provider(() -> "latest"));
 
         this.leftSourceDirectory = getProject().getObjects().directoryProperty();
-        this.leftSourceDirectory.convention(this.getProject()
-                                              .provider(() -> fileFactory.dir(new File(getProject().getBuildDir(),
-                                                "lodestone" + File.separator + this.mcVersion.getOrElse("latest")))));
+        this.leftSourceDirectory.convention(this.getProject().getLayout().getBuildDirectory().dir("lodestone").flatMap(s -> s.dir(this.mcVersion)));
 
         this.leftSourceFileName = getProject().getObjects().property(String.class);
-        this.leftSourceFileName.convention(this.getProject().provider(() -> "metadata.json"));
+        this.leftSourceFileName.convention("metadata.json");
 
         this.leftSourceFile = getProject().getObjects().fileProperty();
         this.leftSourceFile.convention(this.leftSourceDirectory.file(this.leftSourceFileName));
 
         this.rightSourceDirectory = getProject().getObjects().directoryProperty();
-        this.rightSourceDirectory.convention(this.getProject()
-                                               .provider(() -> fileFactory.dir(new File(getProject().getBuildDir(),
-                                                 "lodestone" + File.separator + this.mcVersion.getOrElse("latest")))));
+        this.rightSourceDirectory.convention(this.getProject().getLayout().getBuildDirectory().dir("lodestone").flatMap(s -> s.dir(this.mcVersion)));
 
         this.rightSourceFileName = getProject().getObjects().property(String.class);
-        this.rightSourceFileName.convention(this.getProject().provider(() -> "proguard.json"));
+        this.rightSourceFileName.convention("proguard.json");
 
         this.rightSourceFile = getProject().getObjects().fileProperty();
         this.rightSourceFile.convention(this.rightSourceDirectory.file(this.rightSourceFileName));
 
         this.targetDirectory = getProject().getObjects().directoryProperty();
-        this.targetDirectory.convention(this.getProject()
-                                          .provider(() -> fileFactory.dir(new File(getProject().getBuildDir(),
-                                            "lodestone" + File.separator + this.mcVersion.getOrElse("latest")))));
+        this.rightSourceDirectory.convention(this.getProject().getLayout().getBuildDirectory().dir("lodestone").flatMap(s -> s.dir(this.mcVersion)));
 
         this.targetFileName = getProject().getObjects().property(String.class);
-        this.targetFileName.convention(this.getProject().provider(() -> "merged.json"));
+        this.targetFileName.convention("merged.json");
 
         this.targetFile = getProject().getObjects().fileProperty();
         this.targetFile.convention(this.targetDirectory.file(this.targetFileName));
