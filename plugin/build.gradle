@@ -2,6 +2,7 @@ plugins {
     // Apply the Java Gradle plugin development plugin to add support for developing Gradle plugins
     id 'java-gradle-plugin'
     id 'org.parchmentmc.writtenbooks' version "${versions_plugins_writtenbooks}" apply false
+    id 'maven-publish'
 }
 
 apply plugin: 'org.parchmentmc.writtenbooks'
