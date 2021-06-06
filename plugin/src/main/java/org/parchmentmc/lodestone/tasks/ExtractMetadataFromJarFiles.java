@@ -51,11 +51,6 @@ public abstract class ExtractMetadataFromJarFiles extends DefaultTask
 
     public ExtractMetadataFromJarFiles()
     {
-        if (getProject().getGradle().getStartParameter().isOffline())
-        {
-            throw new IllegalStateException("Gradle is offline. Can not download minecraft metadata.");
-        }
-
         this.mcVersion = getProject().getObjects().property(String.class);
         this.mcVersion.convention("latest");
 

@@ -44,11 +44,6 @@ public abstract class MergeMetadata extends DefaultTask
 
     public MergeMetadata()
     {
-        if (getProject().getGradle().getStartParameter().isOffline())
-        {
-            throw new IllegalStateException("Gradle is offline. Can not download minecraft metadata.");
-        }
-
         this.mcVersion = getProject().getObjects().property(String.class);
         this.mcVersion.convention(getProject().provider(() -> "latest"));
 
