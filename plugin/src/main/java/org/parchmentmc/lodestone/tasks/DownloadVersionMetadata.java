@@ -78,8 +78,11 @@ public abstract class DownloadVersionMetadata extends DefaultTask
 
             final File source = this.sourceFile.getAsFile().get();
 
-
-            final LauncherManifest launcherManifest = gson.fromJson(new FileReader(source), LauncherManifest.class);
+            final LauncherManifest launcherManifest;
+            try (FileReader reader = new FileReader(source))
+            {
+                launcherManifest = gson.fromJson(reader, LauncherManifest.class);
+            }
 
             String workingVersion = this.mcVersion.get();
             if (workingVersion.equals("latest_snapshot")) {

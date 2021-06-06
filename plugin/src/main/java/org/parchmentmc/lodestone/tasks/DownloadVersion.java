@@ -67,7 +67,11 @@ public abstract class DownloadVersion extends DefaultTask
         {
             final Gson gson = new GsonBuilder().registerTypeAdapter(OffsetDateTime.class, new OffsetDateTimeAdapter()).create();
 
-            final VersionManifest versionManifest = gson.fromJson(new FileReader(this.sourceFile.getAsFile().get()), VersionManifest.class);
+            final VersionManifest versionManifest;
+            try (FileReader reader = new FileReader(this.sourceFile.getAsFile().get()))
+            {
+                versionManifest = gson.fromJson(reader, VersionManifest.class);
+            }
 
             final File outputDirectory = this.targetDirectory.getAsFile().get();
 
