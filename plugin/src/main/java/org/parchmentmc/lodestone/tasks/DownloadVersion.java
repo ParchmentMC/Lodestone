@@ -20,6 +20,9 @@ import java.nio.channels.ReadableByteChannel;
 import java.time.OffsetDateTime;
 import java.util.Map;
 
+import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
+import static java.nio.file.StandardOpenOption.WRITE;
+
 @SuppressWarnings("UnstableApiUsage")
 public abstract class DownloadVersion extends DefaultTask
 {
@@ -78,13 +81,13 @@ public abstract class DownloadVersion extends DefaultTask
 
                 final URL downloadUrl = new URL(fileInfo.getUrl());
                 String fileName = fileInfo.getUrl().substring(fileInfo.getUrl().lastIndexOf('/') + 1);
-
                 final File target = new File(outputDirectory, fileName);
-                final ReadableByteChannel readableByteChannel = Channels.newChannel(downloadUrl.openStream());
-                final FileOutputStream fileOutputStream = new FileOutputStream(target, false);
-                final FileChannel fileChannel = fileOutputStream.getChannel();
 
-                fileChannel.transferFrom(readableByteChannel, 0, Long.MAX_VALUE);
+                try (final ReadableByteChannel input = Channels.newChannel(downloadUrl.openStream());
+                     final FileChannel output = FileChannel.open(target.toPath(), WRITE, TRUNCATE_EXISTING))
+                {
+                    output.transferFrom(input, 0, Long.MAX_VALUE);
+                }
             }
 
             final File librariesDirectory = new File(outputDirectory, "libraries");
@@ -95,11 +98,11 @@ public abstract class DownloadVersion extends DefaultTask
                 targetFile.getParentFile().mkdirs();
                 final URL targetUrl = new URL(library.getDownloads().getArtifact().getUrl());
 
-                final ReadableByteChannel readableByteChannel = Channels.newChannel(targetUrl.openStream());
-                final FileOutputStream fileOutputStream = new FileOutputStream(targetFile, false);
-                final FileChannel fileChannel = fileOutputStream.getChannel();
-
-                fileChannel.transferFrom(readableByteChannel, 0, Long.MAX_VALUE);
+                try (final ReadableByteChannel input = Channels.newChannel(targetUrl.openStream());
+                     final FileChannel output = FileChannel.open(targetFile.toPath(), WRITE, TRUNCATE_EXISTING))
+                {
+                    output.transferFrom(input, 0, Long.MAX_VALUE);
+                }
             }
         }
         catch (FileNotFoundException e)
