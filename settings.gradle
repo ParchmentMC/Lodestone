@@ -17,6 +17,6 @@ pluginManagement {
     }
 }
 
-rootProject.name = 'Lodestone'
+rootProject.name = 'lodestone'
 include('plugin')
-project(':plugin').name = 'Lodestone'
+project(':plugin').name = 'lodestone'
