@@ -7,6 +7,8 @@ plugins {
 
 apply plugin: 'org.parchmentmc.writtenbooks'
 
+group = 'org.parchmentmc'
+
 dependencies {
     api "org.ow2.asm:asm:${versions_dependencies_asm}"
     api "org.ow2.asm:asm-commons:${versions_dependencies_asm}"
