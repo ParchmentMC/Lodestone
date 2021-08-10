@@ -10,7 +10,7 @@ public abstract class MinecraftVersionTask extends DefaultTask {
     public abstract Property<String> getMcVersion();
 
     protected MinecraftVersionTask() {
-        LodestoneExtension extension = getExtensions().findByType(LodestoneExtension.class);
+        LodestoneExtension extension = getProject().getExtensions().findByType(LodestoneExtension.class);
         if (extension == null) {
             getMcVersion().convention("latest");
         } else {
