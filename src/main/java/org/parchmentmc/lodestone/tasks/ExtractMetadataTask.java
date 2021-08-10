@@ -19,12 +19,7 @@ public abstract class ExtractMetadataTask extends MinecraftVersionTask {
     @SuppressWarnings("ResultOfMethodCallIgnored")
     @TaskAction
     private void execute() throws IOException {
-        final Gson gson = new GsonBuilder()
-                .registerTypeAdapter(SimpleVersion.class, new SimpleVersionAdapter())
-                .registerTypeAdapterFactory(new MetadataAdapterFactory())
-                .setPrettyPrinting()
-                .disableHtmlEscaping()
-                .create();
+        final Gson gson = createMetadataGson();
 
         final File output = this.getOutput().getAsFile().get();
         final File outputDir = output.getParentFile();
@@ -38,6 +33,15 @@ public abstract class ExtractMetadataTask extends MinecraftVersionTask {
         gson.toJson(sourceMetadata, fileWriter);
         fileWriter.flush();
         fileWriter.close();
+    }
+
+    protected static Gson createMetadataGson() {
+        return new GsonBuilder()
+                .registerTypeAdapter(SimpleVersion.class, new SimpleVersionAdapter())
+                .registerTypeAdapterFactory(new MetadataAdapterFactory())
+                .setPrettyPrinting()
+                .disableHtmlEscaping()
+                .create();
     }
 
     protected abstract SourceMetadata extractMetadata(File inputFile) throws IOException;
