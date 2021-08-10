@@ -488,6 +488,7 @@ public abstract class MergeMetadata extends MinecraftVersionTask
                                 .registerTypeAdapter(SimpleVersion.class, new SimpleVersionAdapter())
                                 .registerTypeAdapterFactory(new MetadataAdapterFactory())
                                 .setPrettyPrinting()
+                                .disableHtmlEscaping()
                                 .create();
 
             final SourceMetadata leftSourceMetadata = gson.fromJson(new FileReader(leftSourceFile), SourceMetadata.class);

@@ -1,15 +1,7 @@
 package org.parchmentmc.lodestone.tasks;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import org.gradle.api.file.DirectoryProperty;
-import org.gradle.api.file.RegularFileProperty;
 import org.gradle.api.tasks.InputDirectory;
-import org.gradle.api.tasks.InputFile;
-import org.gradle.api.tasks.OutputFile;
-import org.gradle.api.tasks.TaskAction;
-import org.parchmentmc.feather.io.gson.SimpleVersionAdapter;
-import org.parchmentmc.feather.io.gson.metadata.MetadataAdapterFactory;
 import org.parchmentmc.feather.metadata.*;
 import org.parchmentmc.feather.named.Named;
 import org.parchmentmc.feather.util.SimpleVersion;
@@ -19,10 +11,7 @@ import org.parchmentmc.lodestone.asm.MutableClassInfo;
 import org.parchmentmc.lodestone.converter.ClassConverter;
 
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -32,86 +21,55 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-@SuppressWarnings("UnstableApiUsage")
-public abstract class ExtractMetadataFromJarFiles extends MinecraftVersionTask
+public abstract class ExtractMetadataFromJarFiles extends ExtractMetadataTask
 {
     public ExtractMetadataFromJarFiles()
     {
         this.getOutput().convention(getProject().getLayout().getBuildDirectory().dir(getName()).map(d -> d.file("metadata.json")));
     }
 
-    @SuppressWarnings("ResultOfMethodCallIgnored")
-    @TaskAction
-    void execute() {
-        try
+    @Override
+    protected SourceMetadata extractMetadata(File clientJarFile) throws IOException {
+        final File librariesDirectory = this.getLibraries().getAsFile().get();
+
+        final CodeTree codeTree = new CodeTree();
+        codeTree.load(clientJarFile.toPath(), false);
+
+        PathMatcher matcher = FileSystems.getDefault().getPathMatcher("regex:.+\\.jar");
+        try (Stream<Path> libraries = Files.find(librariesDirectory.toPath(), 999, (path, basicFileAttributes) -> basicFileAttributes.isRegularFile() && matcher.matches(path)))
         {
-            final File target = this.getOutput().getAsFile().get();
-            final File parentDirectory = target.getParentFile();
-            parentDirectory.mkdirs();
-
-            final File clientJarFile = this.getInput().getAsFile().get();
-            final File librariesDirectory = this.getLibraries().getAsFile().get();
-
-            final CodeTree codeTree = new CodeTree();
-            codeTree.load(clientJarFile.toPath(), false);
-
-            PathMatcher matcher = FileSystems.getDefault().getPathMatcher("regex:.+\\.jar");
-            final Set<Path> libraries = Files.find(librariesDirectory.toPath(), 999, (path, basicFileAttributes) -> basicFileAttributes.isRegularFile() && matcher.matches(path)).collect(Collectors.toSet());
-
-            for (Path libraryFile : libraries)
+            for (Path libraryFile : libraries.collect(Collectors.toSet()))
             {
                 codeTree.load(libraryFile, true);
             }
-
-            final Set<String> minecraftJarClasses = codeTree.getNoneLibraryClasses();
-            final Map<String, MutableClassInfo> asmParsedClassInfo = minecraftJarClasses.stream().collect(Collectors.toMap(
-              Function.identity(),
-              codeTree::getClassMetadataFor
-            ));
-
-            final CodeCleaner codeCleaner = new CodeCleaner(codeTree);
-            asmParsedClassInfo.values().forEach(codeCleaner::cleanClass);
-
-            final ClassConverter classConverter = new ClassConverter();
-            final Map<String, ClassMetadata> cleanedClassMetadata = minecraftJarClasses.stream().collect(Collectors.toMap(
-              Function.identity(),
-              name -> {
-                  final MutableClassInfo classInfo = asmParsedClassInfo.get(name);
-                  return classConverter.convert(classInfo);
-              }
-            ));
-
-            final SourceMetadata baseDataSet = SourceMetadataBuilder.create()
-              .withSpecVersion(SimpleVersion.of("1.0.0"))
-              .withMinecraftVersion(getMcVersion().get())
-              .withClasses(new LinkedHashSet<>(cleanedClassMetadata.values()));
-
-            final SourceMetadata sourceMetadata = adaptClassTypes(baseDataSet);
-
-            final Gson gson = new GsonBuilder()
-                                .registerTypeAdapter(SimpleVersion.class, new SimpleVersionAdapter())
-                                .registerTypeAdapterFactory(new MetadataAdapterFactory())
-                                .setPrettyPrinting()
-                                .create();
-
-            final FileWriter fileWriter = new FileWriter(target);
-            gson.toJson(sourceMetadata, fileWriter);
-            fileWriter.flush();
-            fileWriter.close();
         }
-        catch (FileNotFoundException e)
-        {
-            throw new IllegalStateException("Missing components of the client installation. Could not find the client jar.", e);
-        }
-        catch (MalformedURLException ignored)
-        {
-            //Url comes from the launcher manifest.
-        }
-        catch (IOException e)
-        {
-            throw new IllegalStateException("Failed to load a jar into the code tree");
-        }
+
+        final Set<String> minecraftJarClasses = codeTree.getNoneLibraryClasses();
+        final Map<String, MutableClassInfo> asmParsedClassInfo = minecraftJarClasses.stream().collect(Collectors.toMap(
+                Function.identity(),
+                codeTree::getClassMetadataFor
+        ));
+
+        final CodeCleaner codeCleaner = new CodeCleaner(codeTree);
+        asmParsedClassInfo.values().forEach(codeCleaner::cleanClass);
+
+        final ClassConverter classConverter = new ClassConverter();
+        final Map<String, ClassMetadata> cleanedClassMetadata = minecraftJarClasses.stream().collect(Collectors.toMap(
+                Function.identity(),
+                name -> {
+                    final MutableClassInfo classInfo = asmParsedClassInfo.get(name);
+                    return classConverter.convert(classInfo);
+                }
+        ));
+
+        final SourceMetadata baseDataSet = SourceMetadataBuilder.create()
+                .withSpecVersion(SimpleVersion.of("1.0.0"))
+                .withMinecraftVersion(getMcVersion().get())
+                .withClasses(new LinkedHashSet<>(cleanedClassMetadata.values()));
+
+        return adaptClassTypes(baseDataSet);
     }
 
     private static SourceMetadata adaptClassTypes(final SourceMetadata sourceMetadata) {
@@ -145,12 +103,6 @@ public abstract class ExtractMetadataFromJarFiles extends MinecraftVersionTask
                  )
                  .build();
     }
-
-    @InputFile
-    public abstract RegularFileProperty getInput();
-
-    @OutputFile
-    public abstract RegularFileProperty getOutput();
 
     @InputDirectory
     public abstract DirectoryProperty getLibraries();

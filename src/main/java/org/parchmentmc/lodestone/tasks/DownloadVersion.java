@@ -1,11 +1,9 @@
 package org.parchmentmc.lodestone.tasks;
 
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import org.gradle.api.file.DirectoryProperty;
 import org.gradle.api.file.RegularFileProperty;
 import org.gradle.api.tasks.*;
-import org.parchmentmc.feather.io.gson.OffsetDateTimeAdapter;
 import org.parchmentmc.feather.manifests.Library;
 import org.parchmentmc.feather.manifests.VersionManifest;
 import org.parchmentmc.lodestone.util.OfflineChecker;
@@ -16,7 +14,6 @@ import java.net.URL;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
-import java.time.OffsetDateTime;
 import java.util.Map;
 
 import static java.nio.file.StandardOpenOption.*;
@@ -37,7 +34,7 @@ public abstract class DownloadVersion extends MinecraftVersionTask
 
         try
         {
-            final Gson gson = new GsonBuilder().registerTypeAdapter(OffsetDateTime.class, new OffsetDateTimeAdapter()).create();
+            final Gson gson = DownloadLauncherMetadata.getLauncherManifestGson();
 
             final VersionManifest versionManifest;
             try (FileReader reader = new FileReader(this.getInput().getAsFile().get()))
