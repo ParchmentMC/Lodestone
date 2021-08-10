@@ -2,14 +2,13 @@ package org.parchmentmc.lodestone.tasks;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import org.gradle.api.DefaultTask;
 import org.gradle.api.file.DirectoryProperty;
 import org.gradle.api.file.RegularFileProperty;
-import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.*;
 import org.parchmentmc.feather.io.gson.OffsetDateTimeAdapter;
 import org.parchmentmc.feather.manifests.Library;
 import org.parchmentmc.feather.manifests.VersionManifest;
+import org.parchmentmc.lodestone.util.OfflineChecker;
 
 import java.io.*;
 import java.net.MalformedURLException;
@@ -23,56 +22,30 @@ import java.util.Map;
 import static java.nio.file.StandardOpenOption.*;
 
 @SuppressWarnings("UnstableApiUsage")
-public abstract class DownloadVersion extends DefaultTask
+public abstract class DownloadVersion extends MinecraftVersionTask
 {
-
-    private final Property<String> mcVersion;
-
-    private final DirectoryProperty   sourceDirectory;
-    private final RegularFileProperty sourceFile;
-    private final Property<String>    sourceFileName;
-
-    private final DirectoryProperty targetDirectory;
-
     public DownloadVersion()
     {
-        if (getProject().getGradle().getStartParameter().isOffline())
-        {
-            throw new IllegalStateException("Gradle is offline. Can not download minecraft metadata.");
-        }
-
-        this.mcVersion = getProject().getObjects().property(String.class);
-        this.mcVersion.convention("latest");
-
-        this.sourceDirectory = getProject().getObjects().directoryProperty();
-        this.sourceDirectory.convention(this.getProject().getLayout().getBuildDirectory().dir("lodestone"));
-
-        this.sourceFileName = getProject().getObjects().property(String.class);
-        this.sourceFileName.convention(this.mcVersion.map(v -> v + ".json"));
-
-        this.sourceFile = getProject().getObjects().fileProperty();
-        this.sourceFile.convention(this.sourceDirectory.file(this.sourceFileName));
-
-        this.targetDirectory = getProject().getObjects().directoryProperty();
-        this.targetDirectory.convention(this.getProject().getLayout().getBuildDirectory().dir("lodestone").flatMap(s -> s.dir(this.mcVersion)));
+        this.getOutput().convention(getProject().getLayout().getBuildDirectory().dir(getName()).flatMap(s -> s.dir(this.getMcVersion())));
     }
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
     @TaskAction
     void download()
     {
+        OfflineChecker.checkOffline(getProject());
 
         try
         {
             final Gson gson = new GsonBuilder().registerTypeAdapter(OffsetDateTime.class, new OffsetDateTimeAdapter()).create();
 
             final VersionManifest versionManifest;
-            try (FileReader reader = new FileReader(this.sourceFile.getAsFile().get()))
+            try (FileReader reader = new FileReader(this.getInput().getAsFile().get()))
             {
                 versionManifest = gson.fromJson(reader, VersionManifest.class);
             }
 
-            final File outputDirectory = this.targetDirectory.getAsFile().get();
+            final File outputDirectory = this.getOutput().getAsFile().get();
 
             if (outputDirectory.exists())
                 outputDirectory.delete();
@@ -124,30 +97,9 @@ public abstract class DownloadVersion extends DefaultTask
         }
     }
 
-    public Property<String> getMcVersion()
-    {
-        return mcVersion;
-    }
-
-    public DirectoryProperty getSourceDirectory()
-    {
-        return sourceDirectory;
-    }
-
-    public RegularFileProperty getSourceFile()
-    {
-        return sourceFile;
-    }
-
-    @Input
-    public Property<String> getSourceFileName()
-    {
-        return sourceFileName;
-    }
+    @InputFile
+    public abstract RegularFileProperty getInput();
 
     @OutputDirectory
-    public DirectoryProperty getTargetDirectory()
-    {
-        return targetDirectory;
-    }
+    public abstract DirectoryProperty getOutput();
 }

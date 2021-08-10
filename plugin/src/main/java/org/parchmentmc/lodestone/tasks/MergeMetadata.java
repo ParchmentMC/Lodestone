@@ -2,11 +2,8 @@ package org.parchmentmc.lodestone.tasks;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import org.gradle.api.DefaultTask;
-import org.gradle.api.file.DirectoryProperty;
 import org.gradle.api.file.RegularFileProperty;
-import org.gradle.api.provider.Property;
-import org.gradle.api.tasks.Input;
+import org.gradle.api.tasks.InputFile;
 import org.gradle.api.tasks.OutputFile;
 import org.gradle.api.tasks.TaskAction;
 import org.parchmentmc.feather.io.gson.SimpleVersionAdapter;
@@ -26,53 +23,11 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @SuppressWarnings("UnstableApiUsage")
-public abstract class MergeMetadata extends DefaultTask
+public abstract class MergeMetadata extends MinecraftVersionTask
 {
-    private final DirectoryProperty   leftSourceDirectory;
-    private final RegularFileProperty leftSourceFile;
-    private final Property<String>    leftSourceFileName;
-
-    private final DirectoryProperty   rightSourceDirectory;
-    private final RegularFileProperty rightSourceFile;
-    private final Property<String>    rightSourceFileName;
-
-    private final DirectoryProperty   targetDirectory;
-    private final RegularFileProperty targetFile;
-    private final Property<String>    targetFileName;
-
-    private final Property<String> mcVersion;
-
     public MergeMetadata()
     {
-        this.mcVersion = getProject().getObjects().property(String.class);
-        this.mcVersion.convention(getProject().provider(() -> "latest"));
-
-        this.leftSourceDirectory = getProject().getObjects().directoryProperty();
-        this.leftSourceDirectory.convention(this.getProject().getLayout().getBuildDirectory().dir("lodestone").flatMap(s -> s.dir(this.mcVersion)));
-
-        this.leftSourceFileName = getProject().getObjects().property(String.class);
-        this.leftSourceFileName.convention("metadata.json");
-
-        this.leftSourceFile = getProject().getObjects().fileProperty();
-        this.leftSourceFile.convention(this.leftSourceDirectory.file(this.leftSourceFileName));
-
-        this.rightSourceDirectory = getProject().getObjects().directoryProperty();
-        this.rightSourceDirectory.convention(this.getProject().getLayout().getBuildDirectory().dir("lodestone").flatMap(s -> s.dir(this.mcVersion)));
-
-        this.rightSourceFileName = getProject().getObjects().property(String.class);
-        this.rightSourceFileName.convention("proguard.json");
-
-        this.rightSourceFile = getProject().getObjects().fileProperty();
-        this.rightSourceFile.convention(this.rightSourceDirectory.file(this.rightSourceFileName));
-
-        this.targetDirectory = getProject().getObjects().directoryProperty();
-        this.targetDirectory.convention(this.getProject().getLayout().getBuildDirectory().dir("lodestone").flatMap(s -> s.dir(this.mcVersion)));
-
-        this.targetFileName = getProject().getObjects().property(String.class);
-        this.targetFileName.convention("merged.json");
-
-        this.targetFile = getProject().getObjects().fileProperty();
-        this.targetFile.convention(this.targetDirectory.file(this.targetFileName));
+        this.getOutput().convention(getProject().getLayout().getBuildDirectory().dir(getName()).map(d -> d.file("merged.json")));
     }
 
     private static SourceMetadata adaptTypes(final SourceMetadata sourceMetadata)
@@ -522,12 +477,12 @@ public abstract class MergeMetadata extends DefaultTask
     {
         try
         {
-            final File target = this.targetFile.getAsFile().get();
+            final File target = this.getOutput().getAsFile().get();
             final File parentDirectory = target.getParentFile();
             parentDirectory.mkdirs();
 
-            final File leftSourceFile = this.leftSourceFile.getAsFile().get();
-            final File rightSourceFile = this.rightSourceFile.getAsFile().get();
+            final File leftSourceFile = this.getLeftSource().getAsFile().get();
+            final File rightSourceFile = this.getRightSource().getAsFile().get();
 
             final Gson gson = new GsonBuilder()
                                 .registerTypeAdapter(SimpleVersion.class, new SimpleVersionAdapter())
@@ -561,55 +516,12 @@ public abstract class MergeMetadata extends DefaultTask
         }
     }
 
-    public DirectoryProperty getLeftSourceDirectory()
-    {
-        return leftSourceDirectory;
-    }
+    @InputFile
+    public abstract RegularFileProperty getLeftSource();
 
-    public RegularFileProperty getLeftSourceFile()
-    {
-        return leftSourceFile;
-    }
-
-    public Property<String> getLeftSourceFileName()
-    {
-        return leftSourceFileName;
-    }
-
-    public DirectoryProperty getRightSourceDirectory()
-    {
-        return rightSourceDirectory;
-    }
-
-    public RegularFileProperty getRightSourceFile()
-    {
-        return rightSourceFile;
-    }
-
-    public Property<String> getRightSourceFileName()
-    {
-        return rightSourceFileName;
-    }
-
-    public DirectoryProperty getTargetDirectory()
-    {
-        return targetDirectory;
-    }
+    @InputFile
+    public abstract RegularFileProperty getRightSource();
 
     @OutputFile
-    public RegularFileProperty getTargetFile()
-    {
-        return targetFile;
-    }
-
-    public Property<String> getTargetFileName()
-    {
-        return targetFileName;
-    }
-
-    @Input
-    public Property<String> getMcVersion()
-    {
-        return mcVersion;
-    }
+    public abstract RegularFileProperty getOutput();
 }

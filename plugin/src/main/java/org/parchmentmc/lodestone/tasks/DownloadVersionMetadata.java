@@ -1,14 +1,10 @@
 package org.parchmentmc.lodestone.tasks;
 
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import org.gradle.api.DefaultTask;
-import org.gradle.api.file.DirectoryProperty;
 import org.gradle.api.file.RegularFileProperty;
-import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.*;
-import org.parchmentmc.feather.io.gson.OffsetDateTimeAdapter;
 import org.parchmentmc.feather.manifests.LauncherManifest;
+import org.parchmentmc.lodestone.util.OfflineChecker;
 
 import java.io.*;
 import java.net.MalformedURLException;
@@ -16,66 +12,32 @@ import java.net.URL;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
-import java.time.OffsetDateTime;
 
 import static java.nio.file.StandardOpenOption.*;
 
 @SuppressWarnings("UnstableApiUsage")
-public abstract class DownloadVersionMetadata extends DefaultTask
+public abstract class DownloadVersionMetadata extends MinecraftVersionTask
 {
-
-    private final DirectoryProperty   sourceDirectory;
-    private final RegularFileProperty sourceFile;
-    private final Property<String> sourceFileName;
-
-    private final DirectoryProperty   targetDirectory;
-    private final RegularFileProperty targetFile;
-    private final Property<String> targetFileName;
-
-    private final Property<String> mcVersion;
-
     public DownloadVersionMetadata()
     {
-        if (getProject().getGradle().getStartParameter().isOffline())
-        {
-            throw new IllegalStateException("Gradle is offline. Can not download minecraft metadata.");
-        }
 
-        this.mcVersion = getProject().getObjects().property(String.class);
-        this.mcVersion.convention("latest");
-
-        this.sourceDirectory = getProject().getObjects().directoryProperty();
-        this.sourceDirectory.convention(this.getProject().getLayout().getBuildDirectory().dir("lodestone"));
-
-        this.sourceFileName = getProject().getObjects().property(String.class);
-        this.sourceFileName.convention("launcher.json");
-
-        this.sourceFile = getProject().getObjects().fileProperty();
-        this.sourceFile.convention(this.sourceDirectory.file(this.sourceFileName));
-
-        this.targetDirectory = getProject().getObjects().directoryProperty();
-        this.targetDirectory.convention(this.getProject().getLayout().getBuildDirectory().dir("lodestone"));
-
-        this.targetFileName = getProject().getObjects().property(String.class);
-        this.targetFileName.convention(this.mcVersion.map(s -> s + ".json"));
-
-        this.targetFile = getProject().getObjects().fileProperty();
-        this.targetFile.convention(this.targetDirectory.file(this.targetFileName));
+        this.getOutput().convention(getProject().getLayout().getBuildDirectory().dir(getName()).flatMap(d -> d.file(this.getMcVersion().map(s -> s + ".json"))));
     }
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
     @TaskAction
     void download() {
+        OfflineChecker.checkOffline(getProject());
 
         try
         {
-            final Gson gson = new GsonBuilder().registerTypeAdapter(OffsetDateTime.class, new OffsetDateTimeAdapter()).create();
+            final Gson gson = DownloadLauncherMetadata.getLauncherManifestGson();
 
-            final File target = this.targetFile.getAsFile().get();
+            final File target = this.getOutput().getAsFile().get();
             final File parentDirectory = target.getParentFile();
             parentDirectory.mkdirs();
 
-            final File source = this.sourceFile.getAsFile().get();
+            final File source = this.getInput().getAsFile().get();
 
             final LauncherManifest launcherManifest;
             try (FileReader reader = new FileReader(source))
@@ -83,31 +45,7 @@ public abstract class DownloadVersionMetadata extends DefaultTask
                 launcherManifest = gson.fromJson(reader, LauncherManifest.class);
             }
 
-            String workingVersion = this.mcVersion.get();
-            if (workingVersion.equals("latest_snapshot")) {
-                workingVersion = launcherManifest.getLatest().getSnapshot();
-            } else if (workingVersion.equals("latest_release")) {
-                workingVersion = launcherManifest.getLatest().getRelease();
-            } else if (workingVersion.equals("latest")) {
-                final String latestSnapshot = launcherManifest.getLatest().getSnapshot();
-                final String latestRelease = launcherManifest.getLatest().getRelease();
-
-                final LauncherManifest.VersionData latestSnapshotData = launcherManifest.getVersions().stream().filter(v -> v.getId().equals(latestSnapshot)).findFirst()
-                                                                   .orElseThrow(() -> new IllegalStateException("Missing minecraft version: " + latestSnapshot));
-
-                final LauncherManifest.VersionData latestReleaseData = launcherManifest.getVersions().stream().filter(v -> v.getId().equals(latestRelease)).findFirst()
-                                                                   .orElseThrow(() -> new IllegalStateException("Missing minecraft version: " + latestRelease));
-
-                if (latestSnapshotData.getReleaseTime().isBefore(latestReleaseData.getReleaseTime())) {
-                    workingVersion = latestRelease;
-                }
-                else
-                {
-                    workingVersion = latestSnapshot;
-                }
-            }
-
-            final String selectedVersion = workingVersion;
+            final String selectedVersion = resolveMinecraftVersion(getMcVersion().get(), launcherManifest);
             final LauncherManifest.VersionData versionData = launcherManifest.getVersions().stream().filter(v -> v.getId().equals(selectedVersion)).findFirst()
               .orElseThrow(() -> new IllegalStateException("Missing minecraft version: " + selectedVersion));
 
@@ -135,40 +73,36 @@ public abstract class DownloadVersionMetadata extends DefaultTask
         }
     }
 
-    public DirectoryProperty getSourceDirectory()
-    {
-        return sourceDirectory;
-    }
+    public static String resolveMinecraftVersion(String mcVersion, LauncherManifest launcherManifest) {
+        if (mcVersion.equals("latest_snapshot")) {
+            return launcherManifest.getLatest().getSnapshot();
+        } else if (mcVersion.equals("latest_release")) {
+            return launcherManifest.getLatest().getRelease();
+        } else if (mcVersion.equals("latest")) {
+            final String latestSnapshot = launcherManifest.getLatest().getSnapshot();
+            final String latestRelease = launcherManifest.getLatest().getRelease();
 
-    public RegularFileProperty getSourceFile()
-    {
-        return sourceFile;
-    }
+            final LauncherManifest.VersionData latestSnapshotData = launcherManifest.getVersions().stream().filter(v -> v.getId().equals(latestSnapshot)).findFirst()
+                    .orElseThrow(() -> new IllegalStateException("Missing minecraft version: " + latestSnapshot));
 
-    public Property<String> getSourceFileName()
-    {
-        return sourceFileName;
-    }
+            final LauncherManifest.VersionData latestReleaseData = launcherManifest.getVersions().stream().filter(v -> v.getId().equals(latestRelease)).findFirst()
+                    .orElseThrow(() -> new IllegalStateException("Missing minecraft version: " + latestRelease));
 
-    public DirectoryProperty getTargetDirectory()
-    {
-        return targetDirectory;
-    }
+            if (latestSnapshotData.getReleaseTime().isBefore(latestReleaseData.getReleaseTime())) {
+                return latestRelease;
+            }
+            else
+            {
+                return latestSnapshot;
+            }
+        }
 
-    @OutputFile
-    public RegularFileProperty getTargetFile()
-    {
-        return targetFile;
-    }
-
-    public Property<String> getTargetFileName()
-    {
-        return targetFileName;
-    }
-
-    @Input
-    public Property<String> getMcVersion()
-    {
         return mcVersion;
     }
+
+    @InputFile
+    public abstract RegularFileProperty getInput();
+
+    @OutputFile
+    public abstract RegularFileProperty getOutput();
 }

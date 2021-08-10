@@ -2,11 +2,10 @@ package org.parchmentmc.lodestone.tasks;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import org.gradle.api.DefaultTask;
 import org.gradle.api.file.DirectoryProperty;
 import org.gradle.api.file.RegularFileProperty;
-import org.gradle.api.provider.Property;
-import org.gradle.api.tasks.Input;
+import org.gradle.api.tasks.InputDirectory;
+import org.gradle.api.tasks.InputFile;
 import org.gradle.api.tasks.OutputFile;
 import org.gradle.api.tasks.TaskAction;
 import org.parchmentmc.feather.io.gson.SimpleVersionAdapter;
@@ -35,45 +34,11 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @SuppressWarnings("UnstableApiUsage")
-public abstract class ExtractMetadataFromJarFiles extends DefaultTask
+public abstract class ExtractMetadataFromJarFiles extends MinecraftVersionTask
 {
-    private final DirectoryProperty   sourceDirectory;
-    private final     RegularFileProperty sourceFile;
-    private final     Property<String>    sourceFileName;
-
-    private final DirectoryProperty   librariesDirectory;
-
-    private final DirectoryProperty   targetDirectory;
-    private final RegularFileProperty targetFile;
-    private final Property<String> targetFileName;
-
-    private final Property<String> mcVersion;
-
     public ExtractMetadataFromJarFiles()
     {
-        this.mcVersion = getProject().getObjects().property(String.class);
-        this.mcVersion.convention("latest");
-
-        this.sourceDirectory = getProject().getObjects().directoryProperty();
-        this.sourceDirectory.convention(this.getProject().getLayout().getBuildDirectory().dir("lodestone").flatMap(s -> s.dir(this.mcVersion)));
-
-        this.sourceFileName = getProject().getObjects().property(String.class);
-        this.sourceFileName.convention("client.jar");
-
-        this.sourceFile = getProject().getObjects().fileProperty();
-        this.sourceFile.convention(this.sourceDirectory.file(this.sourceFileName));
-
-        this.librariesDirectory = getProject().getObjects().directoryProperty();
-        this.librariesDirectory.convention(this.sourceDirectory.map(s -> s.dir("libraries")));
-
-        this.targetDirectory = getProject().getObjects().directoryProperty();
-        this.targetDirectory.convention(this.getProject().getLayout().getBuildDirectory().dir("lodestone").flatMap(s -> s.dir(this.mcVersion)));
-
-        this.targetFileName = getProject().getObjects().property(String.class);
-        this.targetFileName.convention("metadata.json");
-
-        this.targetFile = getProject().getObjects().fileProperty();
-        this.targetFile.convention(this.targetDirectory.file(this.targetFileName));
+        this.getOutput().convention(getProject().getLayout().getBuildDirectory().dir(getName()).map(d -> d.file("metadata.json")));
     }
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
@@ -81,12 +46,12 @@ public abstract class ExtractMetadataFromJarFiles extends DefaultTask
     void execute() {
         try
         {
-            final File target = this.targetFile.getAsFile().get();
+            final File target = this.getOutput().getAsFile().get();
             final File parentDirectory = target.getParentFile();
             parentDirectory.mkdirs();
 
-            final File clientJarFile = this.sourceFile.getAsFile().get();
-            final File librariesDirectory = this.librariesDirectory.getAsFile().get();
+            final File clientJarFile = this.getInput().getAsFile().get();
+            final File librariesDirectory = this.getLibraries().getAsFile().get();
 
             final CodeTree codeTree = new CodeTree();
             codeTree.load(clientJarFile.toPath(), false);
@@ -119,7 +84,7 @@ public abstract class ExtractMetadataFromJarFiles extends DefaultTask
 
             final SourceMetadata baseDataSet = SourceMetadataBuilder.create()
               .withSpecVersion(SimpleVersion.of("1.0.0"))
-              .withMinecraftVersion(mcVersion.get())
+              .withMinecraftVersion(getMcVersion().get())
               .withClasses(new LinkedHashSet<>(cleanedClassMetadata.values()));
 
             final SourceMetadata sourceMetadata = adaptClassTypes(baseDataSet);
@@ -181,40 +146,12 @@ public abstract class ExtractMetadataFromJarFiles extends DefaultTask
                  .build();
     }
 
-    public DirectoryProperty getSourceDirectory()
-    {
-        return sourceDirectory;
-    }
-
-    public RegularFileProperty getSourceFile()
-    {
-        return sourceFile;
-    }
-
-    public Property<String> getSourceFileName()
-    {
-        return sourceFileName;
-    }
-
-    public DirectoryProperty getTargetDirectory()
-    {
-        return targetDirectory;
-    }
+    @InputFile
+    public abstract RegularFileProperty getInput();
 
     @OutputFile
-    public RegularFileProperty getTargetFile()
-    {
-        return targetFile;
-    }
+    public abstract RegularFileProperty getOutput();
 
-    public Property<String> getTargetFileName()
-    {
-        return targetFileName;
-    }
-
-    @Input
-    public Property<String> getMcVersion()
-    {
-        return mcVersion;
-    }
+    @InputDirectory
+    public abstract DirectoryProperty getLibraries();
 }
