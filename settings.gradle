@@ -9,5 +9,3 @@ pluginManagement {
 }
 
 rootProject.name = 'lodestone'
-include('plugin')
-project(':plugin').name = 'lodestone'
