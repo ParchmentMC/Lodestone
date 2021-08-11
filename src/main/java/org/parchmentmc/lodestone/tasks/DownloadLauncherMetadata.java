@@ -31,31 +31,20 @@ public abstract class DownloadLauncherMetadata extends DefaultTask
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
     @TaskAction
-    void download() {
+    void download() throws IOException {
         OfflineChecker.checkOffline(getProject());
 
         final File target = this.getOutput().getAsFile().get();
         final File parentDirectory = target.getParentFile();
         parentDirectory.mkdirs();
 
-        try
-        {
-            final URL launcherUrl = new URL(Constants.MOJANG_LAUNCHER_URL);
+        final URL launcherUrl = new URL(Constants.MOJANG_LAUNCHER_URL);
 
-            target.getParentFile().mkdirs();
-            try (final ReadableByteChannel input = Channels.newChannel(launcherUrl.openStream());
-                 final FileChannel output = FileChannel.open(target.toPath(), WRITE, CREATE, TRUNCATE_EXISTING))
-            {
-                output.transferFrom(input, 0, Long.MAX_VALUE);
-            }
-        }
-        catch (MalformedURLException ignored)
+        target.getParentFile().mkdirs();
+        try (final ReadableByteChannel input = Channels.newChannel(launcherUrl.openStream());
+             final FileChannel output = FileChannel.open(target.toPath(), WRITE, CREATE, TRUNCATE_EXISTING))
         {
-            //This is a damn constant.... It will never throw a damn exception.....
-        }
-        catch (IOException e)
-        {
-            throw new IllegalStateException("Failed to download the launcher metadata.", e);
+            output.transferFrom(input, 0, Long.MAX_VALUE);
         }
     }
 

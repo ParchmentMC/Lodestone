@@ -28,69 +28,54 @@ public abstract class DownloadVersion extends MinecraftVersionTask
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
     @TaskAction
-    void download()
+    void download() throws IOException
     {
         OfflineChecker.checkOffline(getProject());
 
-        try
+        final Gson gson = DownloadLauncherMetadata.getLauncherManifestGson();
+
+        final VersionManifest versionManifest;
+        try (FileReader reader = new FileReader(this.getInput().getAsFile().get()))
         {
-            final Gson gson = DownloadLauncherMetadata.getLauncherManifestGson();
+            versionManifest = gson.fromJson(reader, VersionManifest.class);
+        }
 
-            final VersionManifest versionManifest;
-            try (FileReader reader = new FileReader(this.getInput().getAsFile().get()))
+        final File outputDirectory = this.getOutput().getAsFile().get();
+
+        if (outputDirectory.exists())
+            outputDirectory.delete();
+
+        outputDirectory.mkdirs();
+        for (Map.Entry<String, VersionManifest.DownloadInfo> entry : versionManifest.getDownloads().entrySet())
+        {
+            VersionManifest.DownloadInfo fileInfo = entry.getValue();
+
+            final URL downloadUrl = new URL(fileInfo.getUrl());
+            String fileName = fileInfo.getUrl().substring(fileInfo.getUrl().lastIndexOf('/') + 1);
+            final File target = new File(outputDirectory, fileName);
+
+            target.getParentFile().mkdirs();
+            try (final ReadableByteChannel input = Channels.newChannel(downloadUrl.openStream());
+                 final FileChannel output = FileChannel.open(target.toPath(), WRITE, CREATE, TRUNCATE_EXISTING))
             {
-                versionManifest = gson.fromJson(reader, VersionManifest.class);
-            }
-
-            final File outputDirectory = this.getOutput().getAsFile().get();
-
-            if (outputDirectory.exists())
-                outputDirectory.delete();
-
-            outputDirectory.mkdirs();
-            for (Map.Entry<String, VersionManifest.DownloadInfo> entry : versionManifest.getDownloads().entrySet())
-            {
-                VersionManifest.DownloadInfo fileInfo = entry.getValue();
-
-                final URL downloadUrl = new URL(fileInfo.getUrl());
-                String fileName = fileInfo.getUrl().substring(fileInfo.getUrl().lastIndexOf('/') + 1);
-                final File target = new File(outputDirectory, fileName);
-
-                target.getParentFile().mkdirs();
-                try (final ReadableByteChannel input = Channels.newChannel(downloadUrl.openStream());
-                     final FileChannel output = FileChannel.open(target.toPath(), WRITE, CREATE, TRUNCATE_EXISTING))
-                {
-                    output.transferFrom(input, 0, Long.MAX_VALUE);
-                }
-            }
-
-            final File librariesDirectory = new File(outputDirectory, "libraries");
-            librariesDirectory.mkdirs();
-            for (final Library library : versionManifest.getLibraries())
-            {
-                final File targetFile = new File(librariesDirectory, library.getDownloads().getArtifact().getPath());
-                targetFile.getParentFile().mkdirs();
-                final URL targetUrl = new URL(library.getDownloads().getArtifact().getUrl());
-
-                targetFile.getParentFile().mkdirs();
-                try (final ReadableByteChannel input = Channels.newChannel(targetUrl.openStream());
-                     final FileChannel output = FileChannel.open(targetFile.toPath(), WRITE, CREATE, TRUNCATE_EXISTING))
-                {
-                    output.transferFrom(input, 0, Long.MAX_VALUE);
-                }
+                output.transferFrom(input, 0, Long.MAX_VALUE);
             }
         }
-        catch (FileNotFoundException e)
+
+        final File librariesDirectory = new File(outputDirectory, "libraries");
+        librariesDirectory.mkdirs();
+        for (final Library library : versionManifest.getLibraries())
         {
-            throw new IllegalStateException("Missing launcher manifest source file.", e);
-        }
-        catch (MalformedURLException ignored)
-        {
-            //Url comes from the launcher manifest.
-        }
-        catch (IOException e)
-        {
-            throw new IllegalStateException("Failed to download version metadata.", e);
+            final File targetFile = new File(librariesDirectory, library.getDownloads().getArtifact().getPath());
+            targetFile.getParentFile().mkdirs();
+            final URL targetUrl = new URL(library.getDownloads().getArtifact().getUrl());
+
+            targetFile.getParentFile().mkdirs();
+            try (final ReadableByteChannel input = Channels.newChannel(targetUrl.openStream());
+                 final FileChannel output = FileChannel.open(targetFile.toPath(), WRITE, CREATE, TRUNCATE_EXISTING))
+            {
+                output.transferFrom(input, 0, Long.MAX_VALUE);
+            }
         }
     }
 

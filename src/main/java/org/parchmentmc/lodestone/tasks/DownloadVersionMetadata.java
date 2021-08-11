@@ -7,7 +7,6 @@ import org.parchmentmc.feather.manifests.LauncherManifest;
 import org.parchmentmc.lodestone.util.OfflineChecker;
 
 import java.io.*;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
@@ -26,50 +25,35 @@ public abstract class DownloadVersionMetadata extends MinecraftVersionTask
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
     @TaskAction
-    void download() {
+    void download() throws IOException {
         OfflineChecker.checkOffline(getProject());
 
-        try
+        final Gson gson = DownloadLauncherMetadata.getLauncherManifestGson();
+
+        final File target = this.getOutput().getAsFile().get();
+        final File parentDirectory = target.getParentFile();
+        parentDirectory.mkdirs();
+
+        final File source = this.getInput().getAsFile().get();
+
+        final LauncherManifest launcherManifest;
+        try (FileReader reader = new FileReader(source))
         {
-            final Gson gson = DownloadLauncherMetadata.getLauncherManifestGson();
-
-            final File target = this.getOutput().getAsFile().get();
-            final File parentDirectory = target.getParentFile();
-            parentDirectory.mkdirs();
-
-            final File source = this.getInput().getAsFile().get();
-
-            final LauncherManifest launcherManifest;
-            try (FileReader reader = new FileReader(source))
-            {
-                launcherManifest = gson.fromJson(reader, LauncherManifest.class);
-            }
-
-            final String selectedVersion = resolveMinecraftVersion(getMcVersion().get(), launcherManifest);
-            final LauncherManifest.VersionData versionData = launcherManifest.getVersions().stream().filter(v -> v.getId().equals(selectedVersion)).findFirst()
-              .orElseThrow(() -> new IllegalStateException("Missing minecraft version: " + selectedVersion));
-
-            final String versionUrl = versionData.getUrl();
-            final URL url = new URL(versionUrl);
-
-            target.getParentFile().mkdirs();
-            try (final ReadableByteChannel input = Channels.newChannel(url.openStream());
-                 final FileChannel output = FileChannel.open(target.toPath(), WRITE, CREATE, TRUNCATE_EXISTING))
-            {
-                output.transferFrom(input, 0, Long.MAX_VALUE);
-            }
+            launcherManifest = gson.fromJson(reader, LauncherManifest.class);
         }
-        catch (FileNotFoundException e)
+
+        final String selectedVersion = resolveMinecraftVersion(getMcVersion().get(), launcherManifest);
+        final LauncherManifest.VersionData versionData = launcherManifest.getVersions().stream().filter(v -> v.getId().equals(selectedVersion)).findFirst()
+          .orElseThrow(() -> new IllegalStateException("Missing minecraft version: " + selectedVersion));
+
+        final String versionUrl = versionData.getUrl();
+        final URL url = new URL(versionUrl);
+
+        target.getParentFile().mkdirs();
+        try (final ReadableByteChannel input = Channels.newChannel(url.openStream());
+             final FileChannel output = FileChannel.open(target.toPath(), WRITE, CREATE, TRUNCATE_EXISTING))
         {
-            throw new IllegalStateException("Missing launcher manifest source file.", e);
-        }
-        catch (MalformedURLException ignored)
-        {
-            //Url comes from the launcher manifest.
-        }
-        catch (IOException e)
-        {
-            throw new IllegalStateException("Failed to download version metadata.", e);
+            output.transferFrom(input, 0, Long.MAX_VALUE);
         }
     }
 
