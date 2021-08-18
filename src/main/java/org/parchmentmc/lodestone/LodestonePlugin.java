@@ -3,12 +3,11 @@
  */
 package org.parchmentmc.lodestone;
 
-import org.gradle.api.Action;
 import org.gradle.api.Project;
 import org.gradle.api.Plugin;
-import org.gradle.api.plugins.ObjectConfigurationAction;
 
 public class LodestonePlugin implements Plugin<Project> {
     public void apply(Project project) {
+        LodestoneExtension extension = project.getExtensions().create("lodestone", LodestoneExtension.class, project);
     }
 }
