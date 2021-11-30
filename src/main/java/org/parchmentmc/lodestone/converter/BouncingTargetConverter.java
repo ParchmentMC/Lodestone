@@ -7,7 +7,7 @@ import org.parchmentmc.lodestone.asm.MutableBouncerInfo;
 public class BouncingTargetConverter
 {
     public BouncingTargetMetadata convert(final MutableBouncerInfo bouncerInfo) {
-        final MethodReferenceConverter methodReferenceConverter = new MethodReferenceConverter();
+        final ReferenceConverter methodReferenceConverter = new ReferenceConverter();
 
         if (bouncerInfo == null)
             return null;

@@ -13,7 +13,7 @@ public class MethodConverter
 {
     public MethodMetadata convert(final MutableClassInfo classInfo, final MutableMethodInfo mutableMethodInfo)
     {
-        final MethodReferenceConverter methodReferenceConverter = new MethodReferenceConverter();
+        final ReferenceConverter methodReferenceConverter = new ReferenceConverter();
         final BouncingTargetConverter bouncingTargetConverter = new BouncingTargetConverter();
 
         return MethodMetadataBuilder.create()

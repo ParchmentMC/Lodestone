@@ -14,12 +14,11 @@ import java.nio.channels.ReadableByteChannel;
 
 import static java.nio.file.StandardOpenOption.*;
 
-@SuppressWarnings("UnstableApiUsage")
 public abstract class DownloadVersionMetadata extends MinecraftVersionTask
 {
     public DownloadVersionMetadata()
     {
-
+        this.getInput().convention(getProject().getLayout().getBuildDirectory().dir(getName()).map(d -> d.file("launcher.json")));
         this.getOutput().convention(getProject().getLayout().getBuildDirectory().dir(getName()).flatMap(d -> d.file(this.getMcVersion().map(s -> s + ".json"))));
     }
 
@@ -58,27 +57,30 @@ public abstract class DownloadVersionMetadata extends MinecraftVersionTask
     }
 
     public static String resolveMinecraftVersion(String mcVersion, LauncherManifest launcherManifest) {
-        if (mcVersion.equals("latest_snapshot")) {
-            return launcherManifest.getLatest().getSnapshot();
-        } else if (mcVersion.equals("latest_release")) {
-            return launcherManifest.getLatest().getRelease();
-        } else if (mcVersion.equals("latest")) {
-            final String latestSnapshot = launcherManifest.getLatest().getSnapshot();
-            final String latestRelease = launcherManifest.getLatest().getRelease();
+        switch (mcVersion)
+        {
+            case "latest_snapshot":
+                return launcherManifest.getLatest().getSnapshot();
+            case "latest_release":
+                return launcherManifest.getLatest().getRelease();
+            case "latest":
+                final String latestSnapshot = launcherManifest.getLatest().getSnapshot();
+                final String latestRelease = launcherManifest.getLatest().getRelease();
 
-            final LauncherManifest.VersionData latestSnapshotData = launcherManifest.getVersions().stream().filter(v -> v.getId().equals(latestSnapshot)).findFirst()
-                    .orElseThrow(() -> new IllegalStateException("Missing minecraft version: " + latestSnapshot));
+                final LauncherManifest.VersionData latestSnapshotData = launcherManifest.getVersions().stream().filter(v -> v.getId().equals(latestSnapshot)).findFirst()
+                  .orElseThrow(() -> new IllegalStateException("Missing minecraft version: " + latestSnapshot));
 
-            final LauncherManifest.VersionData latestReleaseData = launcherManifest.getVersions().stream().filter(v -> v.getId().equals(latestRelease)).findFirst()
-                    .orElseThrow(() -> new IllegalStateException("Missing minecraft version: " + latestRelease));
+                final LauncherManifest.VersionData latestReleaseData = launcherManifest.getVersions().stream().filter(v -> v.getId().equals(latestRelease)).findFirst()
+                  .orElseThrow(() -> new IllegalStateException("Missing minecraft version: " + latestRelease));
 
-            if (latestSnapshotData.getReleaseTime().isBefore(latestReleaseData.getReleaseTime())) {
-                return latestRelease;
-            }
-            else
-            {
-                return latestSnapshot;
-            }
+                if (latestSnapshotData.getReleaseTime().isBefore(latestReleaseData.getReleaseTime()))
+                {
+                    return latestRelease;
+                }
+                else
+                {
+                    return latestSnapshot;
+                }
         }
 
         return mcVersion;

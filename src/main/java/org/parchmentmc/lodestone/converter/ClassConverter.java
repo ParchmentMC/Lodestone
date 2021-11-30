@@ -14,6 +14,7 @@ public class ClassConverter
     {
         final MethodConverter methodConverter = new MethodConverter();
         final FieldConverter fieldConverter = new FieldConverter();
+        final RecordConverter recordConverter = new RecordConverter();
 
         final ClassMetadataBuilder classMetadataBuilder = ClassMetadataBuilder.create()
                  .withName(NamedBuilder.create().withObfuscated(classInfo.getName()).build())
@@ -22,7 +23,12 @@ public class ClassConverter
                  .withSignature(NamedBuilder.create().withObfuscated(classInfo.getSignature()).build())
                  .withInterfaces(classInfo.getInterfaces().stream().map(interfaceName -> NamedBuilder.create().withObfuscated(interfaceName).build()).collect(Collectors.toSet()))
                  .withFields(classInfo.getFields().values().stream().map(fieldInfo -> fieldConverter.convert(classInfo, fieldInfo)).collect(Collectors.toSet()))
-                 .withMethods(classInfo.getMethods().values().stream().map(methodInfo -> methodConverter.convert(classInfo, methodInfo)).collect(Collectors.toSet()));
+                 .withMethods(classInfo.getMethods().values().stream().map(methodInfo -> methodConverter.convert(classInfo, methodInfo)).collect(Collectors.toSet()))
+                                                            .withRecords(
+                                                              classInfo.getRecords().values().stream().map(recordInfo -> recordConverter.convert(classInfo, recordInfo)).collect(
+                                                                Collectors.toSet())
+                                                            )
+                 .withIsRecord(classInfo.isRecord());
 
         if (classInfo.getName().contains("$")) {
             final String outerName = classInfo.getName().substring(0, classInfo.getName().lastIndexOf("$"));

@@ -70,7 +70,8 @@ public class MutableMethodInfo implements MutableSecuredObjectInfo
                                 }
                                 var += args[index++].getSize();
                             }
-                            else if (start.getOpcode() == Opcodes.INSTANCEOF || start.getOpcode() == Opcodes.CHECKCAST)
+                            else //noinspection StatementWithEmptyBody -> we want to break if we hit something else
+                                if (start.getOpcode() == Opcodes.INSTANCEOF || start.getOpcode() == Opcodes.CHECKCAST)
                             {
                                 //Valid!
                             }
@@ -94,6 +95,32 @@ public class MutableMethodInfo implements MutableSecuredObjectInfo
             }
         }
         this.bouncer = bounce;
+
+        //Check if we are a getter!.
+        //Required to link record fields.
+        if (mutableClassInfo.isRecord() && !this.isStatic() && this.method.getDesc().contains("()") && mutableClassInfo.getFields() != null) {
+            AbstractInsnNode start = node.instructions.getFirst();
+            if (start instanceof LabelNode && start.getNext() instanceof LineNumberNode)
+                start = start.getNext().getNext();
+
+            if (start instanceof VarInsnNode) {
+                VarInsnNode instructionNode  = (VarInsnNode)start;
+                if (instructionNode.var == 0 && instructionNode.getOpcode() == Opcodes.ALOAD) {
+                    if (start.getNext() instanceof FieldInsnNode) {
+                        FieldInsnNode fieldInstruction = (FieldInsnNode)start.getNext();
+                        if (fieldInstruction.owner.equals(mutableClassInfo.getName()) && fieldInstruction.getNext() != null) {
+                            AbstractInsnNode ret = fieldInstruction.getNext();
+                            if (ret.getOpcode() >= Opcodes.IRETURN && ret.getOpcode() <= Opcodes.RETURN) {
+                                MutableFieldInfo returnedFieldInfo = mutableClassInfo.getFields().get(fieldInstruction.name);
+                                if (returnedFieldInfo != null) {
+                                    returnedFieldInfo.getGetters().add(getMethod());
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     public MutableClassInfo getMutableClassInfo()

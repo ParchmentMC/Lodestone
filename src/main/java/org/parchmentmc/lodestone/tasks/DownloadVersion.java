@@ -3,26 +3,30 @@ package org.parchmentmc.lodestone.tasks;
 import com.google.gson.Gson;
 import org.gradle.api.file.DirectoryProperty;
 import org.gradle.api.file.RegularFileProperty;
-import org.gradle.api.tasks.*;
+import org.gradle.api.tasks.InputFile;
+import org.gradle.api.tasks.OutputDirectory;
+import org.gradle.api.tasks.TaskAction;
 import org.parchmentmc.feather.manifests.Library;
 import org.parchmentmc.feather.manifests.VersionManifest;
 import org.parchmentmc.lodestone.util.OfflineChecker;
 
-import java.io.*;
-import java.net.MalformedURLException;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
 import java.net.URL;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
 import java.util.Map;
+import java.util.Objects;
 
 import static java.nio.file.StandardOpenOption.*;
 
-@SuppressWarnings("UnstableApiUsage")
 public abstract class DownloadVersion extends MinecraftVersionTask
 {
     public DownloadVersion()
     {
+        this.getInput().convention(getProject().getLayout().getBuildDirectory().dir(getName()).flatMap(d -> d.file(this.getMcVersion().map(s -> s + ".json"))));
         this.getOutput().convention(getProject().getLayout().getBuildDirectory().dir(getName()).flatMap(s -> s.dir(this.getMcVersion())));
     }
 
@@ -66,7 +70,7 @@ public abstract class DownloadVersion extends MinecraftVersionTask
         librariesDirectory.mkdirs();
         for (final Library library : versionManifest.getLibraries())
         {
-            final File targetFile = new File(librariesDirectory, library.getDownloads().getArtifact().getPath());
+            final File targetFile = new File(librariesDirectory, Objects.requireNonNull(library.getDownloads().getArtifact(), "No artifact was available.").getPath());
             targetFile.getParentFile().mkdirs();
             final URL targetUrl = new URL(library.getDownloads().getArtifact().getUrl());
 

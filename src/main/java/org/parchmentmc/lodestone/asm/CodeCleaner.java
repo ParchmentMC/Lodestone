@@ -58,6 +58,8 @@ public class CodeCleaner
             resolveAbstract(info);
         }
 
+        resolveRecord(info);
+
         info.setResolved(true);
     }
 
@@ -325,6 +327,20 @@ public class CodeCleaner
 
             if (info.getInterfaces() != null && !info.getInterfaces().isEmpty())
                 info.getInterfaces().forEach(add);
+        }
+    }
+
+    private void resolveRecord(MutableClassInfo mutableClassInfo) {
+        if (!mutableClassInfo.isRecord() || mutableClassInfo.getRecords().isEmpty() || mutableClassInfo.getFields().isEmpty())
+            return;
+
+        for (MutableRecordInfo mutableRecordInfo : mutableClassInfo.getRecords().values()) {
+            MutableFieldInfo mutableFieldInfo = mutableClassInfo.getFields().get(mutableRecordInfo.getName());
+            if (mutableFieldInfo != null && !mutableFieldInfo.getGetters().isEmpty()) {
+                mutableRecordInfo.getGetters().addAll(
+                  mutableFieldInfo.getGetters()
+                );
+            }
         }
     }
 
