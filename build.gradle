@@ -7,6 +7,10 @@ plugins {
 
 group = 'org.parchmentmc'
 
+repositories {
+    mavenCentral()
+}
+
 dependencies {
     api "org.ow2.asm:asm:${versions_dependencies_asm}"
     api "org.ow2.asm:asm-commons:${versions_dependencies_asm}"
