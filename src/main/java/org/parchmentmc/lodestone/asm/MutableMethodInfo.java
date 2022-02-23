@@ -110,7 +110,7 @@ public class MutableMethodInfo implements MutableSecuredObjectInfo
                         FieldInsnNode fieldInstruction = (FieldInsnNode)start.getNext();
                         if (fieldInstruction.owner.equals(mutableClassInfo.getName()) && fieldInstruction.getNext() != null) {
                             AbstractInsnNode ret = fieldInstruction.getNext();
-                            if (ret.getOpcode() >= Opcodes.IRETURN && ret.getOpcode() <= Opcodes.RETURN) {
+                            if (ret instanceof JumpInsnNode || (ret.getOpcode() >= Opcodes.IRETURN && ret.getOpcode() <= Opcodes.RETURN)) {
                                 MutableFieldInfo returnedFieldInfo = mutableClassInfo.getFields().get(fieldInstruction.name);
                                 if (returnedFieldInfo != null) {
                                     returnedFieldInfo.getGetters().add(getMethod());
