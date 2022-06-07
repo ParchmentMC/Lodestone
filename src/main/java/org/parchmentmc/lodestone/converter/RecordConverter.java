@@ -1,5 +1,6 @@
 package org.parchmentmc.lodestone.converter;
 
+import kotlin.jvm.internal.MutableLocalVariableReference;
 import org.parchmentmc.feather.metadata.RecordMetadata;
 import org.parchmentmc.feather.metadata.RecordMetadataBuilder;
 import org.parchmentmc.feather.metadata.ReferenceBuilder;
@@ -10,6 +11,8 @@ import org.parchmentmc.lodestone.asm.MutableFieldInfo;
 import org.parchmentmc.lodestone.asm.MutableMethodReferenceInfo;
 import org.parchmentmc.lodestone.asm.MutableRecordInfo;
 
+import java.util.Iterator;
+
 public class RecordConverter
 {
     public RecordMetadata convert(final MutableClassInfo classInfo, final MutableRecordInfo recordInfo)
@@ -17,7 +20,7 @@ public class RecordConverter
         final ReferenceConverter referenceConverter = new ReferenceConverter();
 
         final MutableFieldInfo mutableFieldInfo = classInfo.getFields().get(recordInfo.getName());
-        final MutableMethodReferenceInfo mutableMethodReferenceInfo = mutableFieldInfo.getGetters().iterator().next();
+        final MutableMethodReferenceInfo mutableMethodReferenceInfo = getGetter(mutableFieldInfo);
 
         final Named owner = NamedBuilder.create().withObfuscated(classInfo.getName()).build();
         return RecordMetadataBuilder.create()
@@ -33,5 +36,14 @@ public class RecordConverter
             referenceConverter.convert(mutableMethodReferenceInfo)
           )
           .build();
+    }
+
+    private static MutableMethodReferenceInfo getGetter(MutableFieldInfo fieldInfo) {
+        final Iterator<MutableMethodReferenceInfo> iterator = fieldInfo.getGetters().iterator();
+        MutableMethodReferenceInfo result = null;
+        while(iterator.hasNext()) {
+            result = iterator.next();
+        }
+        return result;
     }
 }
