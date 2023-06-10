@@ -12,20 +12,19 @@ import org.parchmentmc.lodestone.util.OfflineChecker;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
 import java.time.OffsetDateTime;
 
-import static java.nio.file.StandardOpenOption.*;
+import static java.nio.file.StandardOpenOption.CREATE;
+import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
+import static java.nio.file.StandardOpenOption.WRITE;
 
 @SuppressWarnings("UnstableApiUsage")
-public abstract class DownloadLauncherMetadata extends DefaultTask
-{
-    public DownloadLauncherMetadata()
-    {
+public abstract class DownloadLauncherMetadata extends DefaultTask {
+    public DownloadLauncherMetadata() {
         this.getOutput().convention(getProject().getLayout().getBuildDirectory().dir(getName()).map(d -> d.file("launcher.json")));
     }
 
@@ -42,8 +41,7 @@ public abstract class DownloadLauncherMetadata extends DefaultTask
 
         target.getParentFile().mkdirs();
         try (final ReadableByteChannel input = Channels.newChannel(launcherUrl.openStream());
-             final FileChannel output = FileChannel.open(target.toPath(), WRITE, CREATE, TRUNCATE_EXISTING))
-        {
+             final FileChannel output = FileChannel.open(target.toPath(), WRITE, CREATE, TRUNCATE_EXISTING)) {
             output.transferFrom(input, 0, Long.MAX_VALUE);
         }
     }

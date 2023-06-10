@@ -4,8 +4,7 @@ import org.objectweb.asm.commons.Remapper;
 
 import java.util.Map;
 
-public class ASMRemapper extends Remapper
-{
+public class ASMRemapper extends Remapper {
 
     private final Map<String, String> classRenames;
     private final Map<String, String> methodRenames;
@@ -18,9 +17,9 @@ public class ASMRemapper extends Remapper
     @Override
     public String mapMethodName(final String owner, final String name, final String descriptor) {
         final String methodKey = String.format("%s/%s%s",
-          owner,
-          name,
-          descriptor);
+                owner,
+                name,
+                descriptor);
 
         return methodRenames.getOrDefault(methodKey, name);
     }

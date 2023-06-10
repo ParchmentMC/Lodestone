@@ -4,8 +4,7 @@ import org.parchmentmc.feather.metadata.BouncingTargetMetadata;
 import org.parchmentmc.feather.metadata.BouncingTargetMetadataBuilder;
 import org.parchmentmc.lodestone.asm.MutableBouncerInfo;
 
-public class BouncingTargetConverter
-{
+public class BouncingTargetConverter {
     public BouncingTargetMetadata convert(final MutableBouncerInfo bouncerInfo) {
         final ReferenceConverter methodReferenceConverter = new ReferenceConverter();
 
@@ -13,8 +12,8 @@ public class BouncingTargetConverter
             return null;
 
         return BouncingTargetMetadataBuilder.create()
-          .withTarget(methodReferenceConverter.convert(bouncerInfo.getTarget()))
-          .withOwner(methodReferenceConverter.convert(bouncerInfo.getOwner()))
-          .build();
+                .withTarget(methodReferenceConverter.convert(bouncerInfo.getTarget()))
+                .withOwner(methodReferenceConverter.convert(bouncerInfo.getOwner()))
+                .build();
     }
 }
