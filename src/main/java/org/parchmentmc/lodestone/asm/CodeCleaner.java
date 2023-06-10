@@ -51,7 +51,7 @@ public class CodeCleaner {
 
             //Resolve the 'root' owner of each method.
             for (MutableMethodInfo method : info.getMethods().values()) {
-                method.setOverrides(doFindOverrides(method, info.getName(), new TreeSet<>()));
+                method.setOverrides(findOverrides(method, info.getName()));
                 method.setParent(doFindFirstOverride(method, info.getName()));
             }
         }
