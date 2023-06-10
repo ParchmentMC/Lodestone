@@ -16,7 +16,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -31,9 +31,9 @@ public abstract class MergeMetadata extends MinecraftVersionTask {
     public abstract RegularFileProperty getOutput();
 
     private static SourceMetadata adaptTypes(final SourceMetadata sourceMetadata) {
-        final Map<String, String> obfToMojClassNameMap = new HashMap<>();
-        final Map<String, MethodMetadata> obfKeyToMojMethodNameMap = new HashMap<>();
-        final Map<String, FieldMetadata> obfKeyToMojFieldNameMap = new HashMap<>();
+        final Map<String, String> obfToMojClassNameMap = new LinkedHashMap<>();
+        final Map<String, MethodMetadata> obfKeyToMojMethodNameMap = new LinkedHashMap<>();
+        final Map<String, FieldMetadata> obfKeyToMojFieldNameMap = new LinkedHashMap<>();
         sourceMetadata.getClasses().forEach(classMetadata -> {
             collectClassNames(classMetadata, obfToMojClassNameMap);
             collectMethodNames(classMetadata, obfKeyToMojMethodNameMap);

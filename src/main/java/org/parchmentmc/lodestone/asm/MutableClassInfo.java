@@ -7,13 +7,7 @@ import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.InvokeDynamicInsnNode;
 import org.objectweb.asm.tree.MethodNode;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
+import java.util.*;
 
 public class MutableClassInfo implements MutableSecuredObjectInfo {
     private static final Handle LAMBDA_METAFACTORY = new Handle(Opcodes.H_INVOKESTATIC,
@@ -46,11 +40,11 @@ public class MutableClassInfo implements MutableSecuredObjectInfo {
         this.access = node.access == 0 ? null : node.access;
         this.signature = node.signature;
 
-        this.records = new TreeMap<>();
+        this.records = new LinkedHashMap<>();
         if (node.fields == null || node.fields.isEmpty()) {
             this.fields = null;
         } else {
-            this.fields = new TreeMap<>();
+            this.fields = new LinkedHashMap<>();
             node.fields.forEach(fld -> this.fields.put(fld.name, new MutableFieldInfo(this, fld)));
         }
 
@@ -70,7 +64,7 @@ public class MutableClassInfo implements MutableSecuredObjectInfo {
                 }
             }
 
-            this.methods = new TreeMap<>();
+            this.methods = new LinkedHashMap<>();
             for (MethodNode mtd : node.methods) {
                 String key = mtd.name + mtd.desc;
                 this.methods.put(key, new MutableMethodInfo(this, mtd, lambdas.contains(this.name + '/' + key)));

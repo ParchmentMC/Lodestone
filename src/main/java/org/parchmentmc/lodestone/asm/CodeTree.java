@@ -8,15 +8,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 public class CodeTree {
-    private final Set<String> noneLibraryClasses = new HashSet<>();
+    private final Set<String> noneLibraryClasses = new LinkedHashSet<>();
     private final Map<String, byte[]> sources = new HashMap<>();
 
     private final Map<String, MutableClassInfo> parsedClasses = new HashMap<>();

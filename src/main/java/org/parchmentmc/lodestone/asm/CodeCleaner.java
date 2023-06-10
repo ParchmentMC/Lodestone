@@ -4,7 +4,6 @@ import org.objectweb.asm.Opcodes;
 
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.Map;
@@ -296,7 +295,7 @@ public class CodeCleaner {
                     if (mtd.getOverrides() != null) {
                         mtd.getOverrides().add(target);
                     } else {
-                        mtd.setOverrides(new HashSet<>(Collections.singletonList(target)));
+                        mtd.setOverrides(new LinkedHashSet<>(Collections.singletonList(target)));
                     }
                 }
             }
