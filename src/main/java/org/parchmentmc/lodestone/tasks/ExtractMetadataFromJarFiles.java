@@ -4,6 +4,7 @@ import org.gradle.api.file.DirectoryProperty;
 import org.gradle.api.tasks.InputDirectory;
 import org.parchmentmc.feather.metadata.*;
 import org.parchmentmc.feather.named.Named;
+import org.parchmentmc.feather.util.CollectorUtils;
 import org.parchmentmc.feather.util.SimpleVersion;
 import org.parchmentmc.lodestone.asm.CodeCleaner;
 import org.parchmentmc.lodestone.asm.CodeTree;
@@ -20,7 +21,6 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public abstract class ExtractMetadataFromJarFiles extends ExtractMetadataTask {
@@ -37,13 +37,13 @@ public abstract class ExtractMetadataFromJarFiles extends ExtractMetadataTask {
 
         PathMatcher matcher = FileSystems.getDefault().getPathMatcher("regex:.+\\.jar");
         try (Stream<Path> libraries = Files.find(librariesDirectory.toPath(), 999, (path, basicFileAttributes) -> basicFileAttributes.isRegularFile() && matcher.matches(path))) {
-            for (Path libraryFile : libraries.collect(Collectors.toSet())) {
+            for (Path libraryFile : libraries.collect(CollectorUtils.toLinkedSet())) {
                 codeTree.load(libraryFile, true);
             }
         }
 
         final Set<String> minecraftJarClasses = codeTree.getNoneLibraryClasses();
-        final Map<String, MutableClassInfo> asmParsedClassInfo = minecraftJarClasses.stream().collect(Collectors.toMap(
+        final Map<String, MutableClassInfo> asmParsedClassInfo = minecraftJarClasses.stream().collect(CollectorUtils.toLinkedMap(
                 Function.identity(),
                 codeTree::getClassMetadataFor
         ));
@@ -52,7 +52,7 @@ public abstract class ExtractMetadataFromJarFiles extends ExtractMetadataTask {
         asmParsedClassInfo.values().forEach(codeCleaner::cleanClass);
 
         final ClassConverter classConverter = new ClassConverter();
-        final Map<String, ClassMetadata> cleanedClassMetadata = minecraftJarClasses.stream().collect(Collectors.toMap(
+        final Map<String, ClassMetadata> cleanedClassMetadata = minecraftJarClasses.stream().collect(CollectorUtils.toLinkedMap(
                 Function.identity(),
                 name -> {
                     final MutableClassInfo classInfo = asmParsedClassInfo.get(name);
@@ -75,7 +75,7 @@ public abstract class ExtractMetadataFromJarFiles extends ExtractMetadataTask {
     private static SourceMetadata adaptInnerOuterClassList(final SourceMetadata sourceMetadata) {
         final Map<Named, ClassMetadataBuilder> namedClassMetadataMap = sourceMetadata.getClasses()
                 .stream()
-                .collect(Collectors.toMap(
+                .collect(CollectorUtils.toLinkedMap(
                         WithName::getName,
                         ClassMetadataBuilder::create
                 ));
@@ -95,7 +95,7 @@ public abstract class ExtractMetadataFromJarFiles extends ExtractMetadataTask {
                         .stream()
                         .filter(classMetadataBuilder -> classMetadataBuilder.getOwner().isEmpty())
                         .map(ClassMetadataBuilder::build)
-                        .collect(Collectors.toCollection(LinkedHashSet::new))
+                        .collect(CollectorUtils.toLinkedSet())
                 )
                 .build();
     }

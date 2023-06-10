@@ -3,9 +3,8 @@ package org.parchmentmc.lodestone.converter;
 import org.parchmentmc.feather.metadata.ClassMetadata;
 import org.parchmentmc.feather.metadata.ClassMetadataBuilder;
 import org.parchmentmc.feather.named.NamedBuilder;
+import org.parchmentmc.feather.util.CollectorUtils;
 import org.parchmentmc.lodestone.asm.MutableClassInfo;
-
-import java.util.stream.Collectors;
 
 public class ClassConverter {
 
@@ -19,12 +18,11 @@ public class ClassConverter {
                 .withSuperName(NamedBuilder.create().withObfuscated(classInfo.getSuperName()).build())
                 .withSecuritySpecifications(classInfo.getAccess())
                 .withSignature(NamedBuilder.create().withObfuscated(classInfo.getSignature()).build())
-                .withInterfaces(classInfo.getInterfaces().stream().map(interfaceName -> NamedBuilder.create().withObfuscated(interfaceName).build()).collect(Collectors.toSet()))
-                .withFields(classInfo.getFields().values().stream().map(fieldInfo -> fieldConverter.convert(classInfo, fieldInfo)).collect(Collectors.toSet()))
-                .withMethods(classInfo.getMethods().values().stream().map(methodInfo -> methodConverter.convert(classInfo, methodInfo)).collect(Collectors.toSet()))
+                .withInterfaces(classInfo.getInterfaces().stream().map(interfaceName -> NamedBuilder.create().withObfuscated(interfaceName).build()).collect(CollectorUtils.toLinkedSet()))
+                .withFields(classInfo.getFields().values().stream().map(fieldInfo -> fieldConverter.convert(classInfo, fieldInfo)).collect(CollectorUtils.toLinkedSet()))
+                .withMethods(classInfo.getMethods().values().stream().map(methodInfo -> methodConverter.convert(classInfo, methodInfo)).collect(CollectorUtils.toLinkedSet()))
                 .withRecords(
-                        classInfo.getRecords().values().stream().map(recordInfo -> recordConverter.convert(classInfo, recordInfo)).collect(
-                                Collectors.toSet())
+                        classInfo.getRecords().values().stream().map(recordInfo -> recordConverter.convert(classInfo, recordInfo)).collect(CollectorUtils.toLinkedSet())
                 )
                 .withIsRecord(classInfo.isRecord());
 
