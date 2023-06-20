@@ -3,10 +3,9 @@ package org.parchmentmc.lodestone.asm;
 import java.util.HashSet;
 import java.util.Set;
 
-public class MutableRecordInfo
-{
-    private final String                          name;
-    private final String                          desc;
+public class MutableRecordInfo {
+    private final String name;
+    private final String desc;
     private final Set<MutableMethodReferenceInfo> getters = new HashSet<>();
 
     public MutableRecordInfo(final String name, final String desc) {
@@ -14,18 +13,15 @@ public class MutableRecordInfo
         this.desc = desc;
     }
 
-    public String getName()
-    {
+    public String getName() {
         return name;
     }
 
-    public String getDesc()
-    {
+    public String getDesc() {
         return desc;
     }
 
-    public Set<MutableMethodReferenceInfo> getGetters()
-    {
+    public Set<MutableMethodReferenceInfo> getGetters() {
         return getters;
     }
 }

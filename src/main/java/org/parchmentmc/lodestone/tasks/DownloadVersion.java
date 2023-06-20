@@ -22,25 +22,21 @@ import java.util.Objects;
 
 import static java.nio.file.StandardOpenOption.*;
 
-public abstract class DownloadVersion extends MinecraftVersionTask
-{
-    public DownloadVersion()
-    {
+public abstract class DownloadVersion extends MinecraftVersionTask {
+    public DownloadVersion() {
         this.getInput().convention(getProject().getLayout().getBuildDirectory().dir(getName()).flatMap(d -> d.file(this.getMcVersion().map(s -> s + ".json"))));
         this.getOutput().convention(getProject().getLayout().getBuildDirectory().dir(getName()).flatMap(s -> s.dir(this.getMcVersion())));
     }
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
     @TaskAction
-    void download() throws IOException
-    {
+    void download() throws IOException {
         OfflineChecker.checkOffline(getProject());
 
         final Gson gson = DownloadLauncherMetadata.getLauncherManifestGson();
 
         final VersionManifest versionManifest;
-        try (FileReader reader = new FileReader(this.getInput().getAsFile().get()))
-        {
+        try (FileReader reader = new FileReader(this.getInput().getAsFile().get())) {
             versionManifest = gson.fromJson(reader, VersionManifest.class);
         }
 
@@ -50,8 +46,7 @@ public abstract class DownloadVersion extends MinecraftVersionTask
             outputDirectory.delete();
 
         outputDirectory.mkdirs();
-        for (Map.Entry<String, VersionManifest.DownloadInfo> entry : versionManifest.getDownloads().entrySet())
-        {
+        for (Map.Entry<String, VersionManifest.DownloadInfo> entry : versionManifest.getDownloads().entrySet()) {
             VersionManifest.DownloadInfo fileInfo = entry.getValue();
 
             final URL downloadUrl = new URL(fileInfo.getUrl());
@@ -60,24 +55,21 @@ public abstract class DownloadVersion extends MinecraftVersionTask
 
             target.getParentFile().mkdirs();
             try (final ReadableByteChannel input = Channels.newChannel(downloadUrl.openStream());
-                 final FileChannel output = FileChannel.open(target.toPath(), WRITE, CREATE, TRUNCATE_EXISTING))
-            {
+                 final FileChannel output = FileChannel.open(target.toPath(), WRITE, CREATE, TRUNCATE_EXISTING)) {
                 output.transferFrom(input, 0, Long.MAX_VALUE);
             }
         }
 
         final File librariesDirectory = new File(outputDirectory, "libraries");
         librariesDirectory.mkdirs();
-        for (final Library library : versionManifest.getLibraries())
-        {
+        for (final Library library : versionManifest.getLibraries()) {
             final File targetFile = new File(librariesDirectory, Objects.requireNonNull(library.getDownloads().getArtifact(), "No artifact was available.").getPath());
             targetFile.getParentFile().mkdirs();
             final URL targetUrl = new URL(library.getDownloads().getArtifact().getUrl());
 
             targetFile.getParentFile().mkdirs();
             try (final ReadableByteChannel input = Channels.newChannel(targetUrl.openStream());
-                 final FileChannel output = FileChannel.open(targetFile.toPath(), WRITE, CREATE, TRUNCATE_EXISTING))
-            {
+                 final FileChannel output = FileChannel.open(targetFile.toPath(), WRITE, CREATE, TRUNCATE_EXISTING)) {
                 output.transferFrom(input, 0, Long.MAX_VALUE);
             }
         }

@@ -2,8 +2,7 @@ package org.parchmentmc.lodestone.util;
 
 public class Constants {
 
-    private Constants()
-    {
+    private Constants() {
         throw new IllegalStateException("Can not instantiate an instance of: Constants. This is a utility class");
     }
 

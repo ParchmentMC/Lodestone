@@ -1,27 +1,22 @@
 package org.parchmentmc.lodestone.asm;
 
-public class MutableBouncerInfo
-{
+public class MutableBouncerInfo {
     private final MutableMethodReferenceInfo target;
-    private       MutableMethodReferenceInfo owner;
+    private MutableMethodReferenceInfo owner;
 
-    public MutableBouncerInfo(MutableMethodReferenceInfo target)
-    {
+    public MutableBouncerInfo(MutableMethodReferenceInfo target) {
         this.target = target;
     }
 
-    public MutableMethodReferenceInfo getTarget()
-    {
+    public MutableMethodReferenceInfo getTarget() {
         return target;
     }
 
-    public MutableMethodReferenceInfo getOwner()
-    {
+    public MutableMethodReferenceInfo getOwner() {
         return owner;
     }
 
-    public void setOwner(final MutableMethodReferenceInfo owner)
-    {
+    public void setOwner(final MutableMethodReferenceInfo owner) {
         this.owner = owner;
     }
 }

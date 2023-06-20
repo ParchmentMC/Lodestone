@@ -15,21 +15,18 @@ import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-public class CodeTree
-{
-    private final Set<String>         noneLibraryClasses = new HashSet<>();
-    private final Map<String, byte[]> sources            = new HashMap<>();
+public class CodeTree {
+    private final Set<String> noneLibraryClasses = new HashSet<>();
+    private final Map<String, byte[]> sources = new HashMap<>();
 
     private final Map<String, MutableClassInfo> parsedClasses = new HashMap<>();
 
-    public Set<String> getNoneLibraryClasses()
-    {
+    public Set<String> getNoneLibraryClasses() {
         return noneLibraryClasses;
     }
 
     public final void load(final Path path, final boolean library) throws IOException {
-        try(ZipInputStream zipInputStream = new ZipInputStream(Files.newInputStream(path)))
-        {
+        try (ZipInputStream zipInputStream = new ZipInputStream(Files.newInputStream(path))) {
             ZipEntry entry;
             while ((entry = zipInputStream.getNextEntry()) != null) {
                 String name = entry.getName();
@@ -77,7 +74,7 @@ public class CodeTree
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(Math.max(8192, is.available()));
         byte[] buffer = new byte[8192];
         int read;
-        while((read = is.read(buffer)) >= 0) {
+        while ((read = is.read(buffer)) >= 0) {
             byteArrayOutputStream.write(buffer, 0, read);
         }
         return byteArrayOutputStream.toByteArray();

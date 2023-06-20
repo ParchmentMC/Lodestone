@@ -23,10 +23,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public abstract class ExtractMetadataFromJarFiles extends ExtractMetadataTask
-{
-    public ExtractMetadataFromJarFiles()
-    {
+public abstract class ExtractMetadataFromJarFiles extends ExtractMetadataTask {
+    public ExtractMetadataFromJarFiles() {
         this.getOutput().convention(getProject().getLayout().getBuildDirectory().dir(getName()).map(d -> d.file("metadata.json")));
     }
 
@@ -38,10 +36,8 @@ public abstract class ExtractMetadataFromJarFiles extends ExtractMetadataTask
         codeTree.load(clientJarFile.toPath(), false);
 
         PathMatcher matcher = FileSystems.getDefault().getPathMatcher("regex:.+\\.jar");
-        try (Stream<Path> libraries = Files.find(librariesDirectory.toPath(), 999, (path, basicFileAttributes) -> basicFileAttributes.isRegularFile() && matcher.matches(path)))
-        {
-            for (Path libraryFile : libraries.collect(Collectors.toSet()))
-            {
+        try (Stream<Path> libraries = Files.find(librariesDirectory.toPath(), 999, (path, basicFileAttributes) -> basicFileAttributes.isRegularFile() && matcher.matches(path))) {
+            for (Path libraryFile : libraries.collect(Collectors.toSet())) {
                 codeTree.load(libraryFile, true);
             }
         }
@@ -78,11 +74,11 @@ public abstract class ExtractMetadataFromJarFiles extends ExtractMetadataTask
 
     private static SourceMetadata adaptInnerOuterClassList(final SourceMetadata sourceMetadata) {
         final Map<Named, ClassMetadataBuilder> namedClassMetadataMap = sourceMetadata.getClasses()
-                                                                         .stream()
-                                                                         .collect(Collectors.toMap(
-                                                                           WithName::getName,
-                                                                           ClassMetadataBuilder::create
-                                                                         ));
+                .stream()
+                .collect(Collectors.toMap(
+                        WithName::getName,
+                        ClassMetadataBuilder::create
+                ));
 
         namedClassMetadataMap.values().forEach(classMetadata -> {
             final Named outerName = classMetadata.getOwner();
@@ -93,15 +89,15 @@ public abstract class ExtractMetadataFromJarFiles extends ExtractMetadataTask
         });
 
         return SourceMetadataBuilder.create()
-                 .withSpecVersion(sourceMetadata.getSpecificationVersion())
-                 .withMinecraftVersion(sourceMetadata.getMinecraftVersion())
-                 .withClasses(namedClassMetadataMap.values()
-                                .stream()
-                                .filter(classMetadataBuilder -> classMetadataBuilder.getOwner().isEmpty())
-                                .map(ClassMetadataBuilder::build)
-                                .collect(Collectors.toCollection(LinkedHashSet::new))
-                 )
-                 .build();
+                .withSpecVersion(sourceMetadata.getSpecificationVersion())
+                .withMinecraftVersion(sourceMetadata.getMinecraftVersion())
+                .withClasses(namedClassMetadataMap.values()
+                        .stream()
+                        .filter(classMetadataBuilder -> classMetadataBuilder.getOwner().isEmpty())
+                        .map(ClassMetadataBuilder::build)
+                        .collect(Collectors.toCollection(LinkedHashSet::new))
+                )
+                .build();
     }
 
     @InputDirectory

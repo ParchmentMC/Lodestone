@@ -31,6 +31,7 @@ public class LodestoneExtension {
     }
 
     private String resolvedMcVersion;
+
     public Provider<String> getResolvedMcVersion() {
         return mcVersion.map(mc -> {
             if (resolvedMcVersion != null)
