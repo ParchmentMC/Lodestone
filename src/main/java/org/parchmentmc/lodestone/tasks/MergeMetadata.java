@@ -8,6 +8,7 @@ import org.gradle.api.tasks.TaskAction;
 import org.parchmentmc.feather.metadata.*;
 import org.parchmentmc.feather.named.Named;
 import org.parchmentmc.feather.named.NamedBuilder;
+import org.parchmentmc.feather.util.CollectorUtils;
 import org.parchmentmc.feather.utils.MetadataMerger;
 import org.parchmentmc.lodestone.util.ASMRemapper;
 
@@ -15,7 +16,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -30,9 +31,9 @@ public abstract class MergeMetadata extends MinecraftVersionTask {
     public abstract RegularFileProperty getOutput();
 
     private static SourceMetadata adaptTypes(final SourceMetadata sourceMetadata) {
-        final Map<String, String> obfToMojClassNameMap = new HashMap<>();
-        final Map<String, MethodMetadata> obfKeyToMojMethodNameMap = new HashMap<>();
-        final Map<String, FieldMetadata> obfKeyToMojFieldNameMap = new HashMap<>();
+        final Map<String, String> obfToMojClassNameMap = new LinkedHashMap<>();
+        final Map<String, MethodMetadata> obfKeyToMojMethodNameMap = new LinkedHashMap<>();
+        final Map<String, FieldMetadata> obfKeyToMojFieldNameMap = new LinkedHashMap<>();
         sourceMetadata.getClasses().forEach(classMetadata -> {
             collectClassNames(classMetadata, obfToMojClassNameMap);
             collectMethodNames(classMetadata, obfKeyToMojMethodNameMap);
@@ -88,6 +89,7 @@ public abstract class MergeMetadata extends MinecraftVersionTask {
             final Map<String, String> obfToMojNameMap,
             final Map<String, MethodMetadata> obfKeyToMojMethodNameMap
     ) {
+        // No need to retain insertion order, since this is only for lookup and not iterated over
         final Map<String, String> obfToMojMethodNameMap = obfKeyToMojMethodNameMap.entrySet().stream().collect(Collectors.toMap(
                 Map.Entry::getKey,
                 e -> e.getValue().getName().getMojangName().orElseThrow(() -> new IllegalStateException("Missing mojang name"))
@@ -101,7 +103,7 @@ public abstract class MergeMetadata extends MinecraftVersionTask {
         final ClassMetadataBuilder classMetadataBuilder = ClassMetadataBuilder.create(classMetadata)
                 .withInnerClasses(classMetadata.getInnerClasses().stream()
                         .map(inner -> adaptSignatures(inner, obfToMojNameMap, obfKeyToMojMethodNameMap))
-                        .collect(Collectors.toSet()))
+                        .collect(CollectorUtils.toLinkedSet()))
                 .withMethods(classMetadata.getMethods().stream()
                         .map(method -> {
                             final MethodMetadataBuilder builder = MethodMetadataBuilder.create(method);
@@ -153,7 +155,7 @@ public abstract class MergeMetadata extends MinecraftVersionTask {
                             }
                             return builder.build();
                         })
-                        .collect(Collectors.toSet()))
+                        .collect(CollectorUtils.toLinkedSet()))
                 .withFields(classMetadata.getFields().stream()
                         .map(field -> {
                             final FieldMetadataBuilder fieldMetadataBuilder = FieldMetadataBuilder.create(field);
@@ -187,7 +189,7 @@ public abstract class MergeMetadata extends MinecraftVersionTask {
 
                             return fieldMetadataBuilder.build();
                         })
-                        .collect(Collectors.toSet()))
+                        .collect(CollectorUtils.toLinkedSet()))
                 .withRecords(classMetadata.getRecords().stream()
                         .map(record -> {
                             final RecordMetadataBuilder builder = RecordMetadataBuilder.create(record);
@@ -211,7 +213,7 @@ public abstract class MergeMetadata extends MinecraftVersionTask {
 
                             return builder.build();
                         })
-                        .collect(Collectors.toSet()));
+                        .collect(CollectorUtils.toLinkedSet()));
 
 
         if (!classMetadata.getSuperName().hasMojangName() && classMetadata.getSuperName().hasObfuscatedName()) {
@@ -262,6 +264,7 @@ public abstract class MergeMetadata extends MinecraftVersionTask {
             final Map<String, MethodMetadata> obfKeyToMojMethodNameMap,
             final Map<String, FieldMetadata> obfKeyToMojFieldNameMap
     ) {
+        // No need to retain insertion order, since this is only for lookup and not iterated over
         final Map<String, String> obfToMojMethodNameMap = obfKeyToMojMethodNameMap.entrySet().stream().collect(Collectors.toMap(
                 Map.Entry::getKey,
                 e -> e.getValue()
@@ -278,7 +281,7 @@ public abstract class MergeMetadata extends MinecraftVersionTask {
         final ClassMetadataBuilder classMetadataBuilder = ClassMetadataBuilder.create(classMetadata)
                 .withInnerClasses(classMetadata.getInnerClasses().stream()
                         .map(inner -> adaptReferences(inner, obfToMojNameMap, obfKeyToMojMethodNameMap, obfKeyToMojFieldNameMap))
-                        .collect(Collectors.toSet()))
+                        .collect(CollectorUtils.toLinkedSet()))
                 .withMethods(classMetadata.getMethods().stream()
                         .map(method -> {
                             final MethodMetadataBuilder builder = MethodMetadataBuilder.create(method);
@@ -350,7 +353,7 @@ public abstract class MergeMetadata extends MinecraftVersionTask {
 
                             return builder.build();
                         })
-                        .collect(Collectors.toSet()))
+                        .collect(CollectorUtils.toLinkedSet()))
                 .withRecords(classMetadata.getRecords().stream()
                         .map(record -> {
                             final RecordMetadataBuilder builder = RecordMetadataBuilder.create(record);
@@ -376,7 +379,7 @@ public abstract class MergeMetadata extends MinecraftVersionTask {
 
                             return builder.build();
                         })
-                        .collect(Collectors.toSet()));
+                        .collect(CollectorUtils.toLinkedSet()));
         return classMetadataBuilder.build();
     }
 

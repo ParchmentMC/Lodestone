@@ -1,12 +1,12 @@
 package org.parchmentmc.lodestone.asm;
 
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 public class MutableRecordInfo {
     private final String name;
     private final String desc;
-    private final Set<MutableMethodReferenceInfo> getters = new HashSet<>();
+    private final Set<MutableMethodReferenceInfo> getters = new LinkedHashSet<>();
 
     public MutableRecordInfo(final String name, final String desc) {
         this.name = name;

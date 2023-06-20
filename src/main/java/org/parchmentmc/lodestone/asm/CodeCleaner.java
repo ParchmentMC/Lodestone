@@ -4,7 +4,6 @@ import org.objectweb.asm.Opcodes;
 
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.Map;
@@ -51,7 +50,7 @@ public class CodeCleaner {
 
             //Resolve the 'root' owner of each method.
             for (MutableMethodInfo method : info.getMethods().values()) {
-                method.setOverrides(doFindOverrides(method, info.getName(), new TreeSet<>()));
+                method.setOverrides(findOverrides(method, info.getName()));
                 method.setParent(doFindFirstOverride(method, info.getName()));
             }
         }
@@ -296,7 +295,7 @@ public class CodeCleaner {
                     if (mtd.getOverrides() != null) {
                         mtd.getOverrides().add(target);
                     } else {
-                        mtd.setOverrides(new HashSet<>(Collections.singletonList(target)));
+                        mtd.setOverrides(new LinkedHashSet<>(Collections.singletonList(target)));
                     }
                 }
             }
