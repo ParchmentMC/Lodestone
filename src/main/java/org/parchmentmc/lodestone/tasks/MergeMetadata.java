@@ -45,12 +45,23 @@ public abstract class MergeMetadata extends MinecraftVersionTask {
         sourceMetadataBuilder.withSpecVersion(sourceMetadata.getSpecificationVersion())
                 .withMinecraftVersion(sourceMetadata.getMinecraftVersion());
 
+        // No need to retain insertion order, since this is only for lookup and not iterated over
+        final Map<String, String> obfToMojMethodNameMap = obfKeyToMojMethodNameMap.entrySet().stream().collect(Collectors.toMap(
+                Map.Entry::getKey,
+                e -> e.getValue().getName().getMojangName().orElseThrow(() -> new IllegalStateException("Missing mojang name"))
+        ));
+
+        ASMRemapper remapper = new ASMRemapper(
+                obfToMojClassNameMap,
+                obfToMojMethodNameMap
+        );
+
         for (final ClassMetadata aClass : sourceMetadata.getClasses()) {
             sourceMetadataBuilder.addClass(
                     adaptSignatures(
                             aClass,
                             obfToMojClassNameMap,
-                            obfKeyToMojMethodNameMap
+                            remapper
                     )
             );
         }
@@ -70,13 +81,27 @@ public abstract class MergeMetadata extends MinecraftVersionTask {
         bouncerRemappedDataBuilder.withSpecVersion(sourceMetadata.getSpecificationVersion())
                 .withMinecraftVersion(sourceMetadata.getMinecraftVersion());
 
+        // No need to retain insertion order, since this is only for lookup and not iterated over
+        final Map<String, String> obfToMojMethodNameWithObfMap = obfKeyToMojMethodNameMap.entrySet().stream().collect(Collectors.toMap(
+                Map.Entry::getKey,
+                e -> e.getValue()
+                        .getName()
+                        .getMojangName()
+                        .orElseGet(() -> e.getValue().getName().getObfuscatedName().orElseThrow(() -> new IllegalStateException("Missing mojang name")))
+        ));
+
+        remapper = new ASMRemapper(
+                obfToMojClassNameMap,
+                obfToMojMethodNameWithObfMap
+        );
+
         for (final ClassMetadata aClass : signatureRemappedData.getClasses()) {
             bouncerRemappedDataBuilder.addClass(
                     adaptReferences(
                             aClass,
-                            obfToMojClassNameMap,
                             obfKeyToMojMethodNameMap,
-                            obfKeyToMojFieldNameMap
+                            obfKeyToMojFieldNameMap,
+                            remapper
                     )
             );
         }
@@ -87,22 +112,12 @@ public abstract class MergeMetadata extends MinecraftVersionTask {
     private static ClassMetadata adaptSignatures(
             final ClassMetadata classMetadata,
             final Map<String, String> obfToMojNameMap,
-            final Map<String, MethodMetadata> obfKeyToMojMethodNameMap
+            final ASMRemapper remapper
     ) {
-        // No need to retain insertion order, since this is only for lookup and not iterated over
-        final Map<String, String> obfToMojMethodNameMap = obfKeyToMojMethodNameMap.entrySet().stream().collect(Collectors.toMap(
-                Map.Entry::getKey,
-                e -> e.getValue().getName().getMojangName().orElseThrow(() -> new IllegalStateException("Missing mojang name"))
-        ));
-
-        final ASMRemapper remapper = new ASMRemapper(
-                obfToMojNameMap,
-                obfToMojMethodNameMap
-        );
 
         final ClassMetadataBuilder classMetadataBuilder = ClassMetadataBuilder.create(classMetadata)
                 .withInnerClasses(classMetadata.getInnerClasses().stream()
-                        .map(inner -> adaptSignatures(inner, obfToMojNameMap, obfKeyToMojMethodNameMap))
+                        .map(inner -> adaptSignatures(inner, obfToMojNameMap, remapper))
                         .collect(CollectorUtils.toLinkedSet()))
                 .withMethods(classMetadata.getMethods().stream()
                         .map(method -> {
@@ -260,27 +275,14 @@ public abstract class MergeMetadata extends MinecraftVersionTask {
 
     private static ClassMetadata adaptReferences(
             final ClassMetadata classMetadata,
-            final Map<String, String> obfToMojNameMap,
             final Map<String, MethodMetadata> obfKeyToMojMethodNameMap,
-            final Map<String, FieldMetadata> obfKeyToMojFieldNameMap
+            final Map<String, FieldMetadata> obfKeyToMojFieldNameMap,
+            final ASMRemapper remapper
     ) {
-        // No need to retain insertion order, since this is only for lookup and not iterated over
-        final Map<String, String> obfToMojMethodNameMap = obfKeyToMojMethodNameMap.entrySet().stream().collect(Collectors.toMap(
-                Map.Entry::getKey,
-                e -> e.getValue()
-                        .getName()
-                        .getMojangName()
-                        .orElseGet(() -> e.getValue().getName().getObfuscatedName().orElseThrow(() -> new IllegalStateException("Missing mojang name")))
-        ));
-
-        final ASMRemapper remapper = new ASMRemapper(
-                obfToMojNameMap,
-                obfToMojMethodNameMap
-        );
 
         final ClassMetadataBuilder classMetadataBuilder = ClassMetadataBuilder.create(classMetadata)
                 .withInnerClasses(classMetadata.getInnerClasses().stream()
-                        .map(inner -> adaptReferences(inner, obfToMojNameMap, obfKeyToMojMethodNameMap, obfKeyToMojFieldNameMap))
+                        .map(inner -> adaptReferences(inner, obfKeyToMojMethodNameMap, obfKeyToMojFieldNameMap, remapper))
                         .collect(CollectorUtils.toLinkedSet()))
                 .withMethods(classMetadata.getMethods().stream()
                         .map(method -> {
