@@ -32,6 +32,11 @@ public class MutableClassInfo implements MutableSecuredObjectInfo {
     private final boolean isRecord;
     private boolean resolved = false;
 
+    /**
+     * Main Constructor
+     * 
+     * @param node The class node being parsed into metadata.
+     */
     MutableClassInfo(ClassNode node) {
         this.name = node.name;
         this.superName = "java/lang/Object".equals(node.superName) ? null : node.superName;

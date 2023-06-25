@@ -14,18 +14,36 @@ import java.util.function.Consumer;
 
 public class CodeCleaner {
 
+    /**
+     * The CodeTree which holds the various classes and their mutable metadata representations.
+     */
     private final CodeTree codeTree;
 
+    /**
+     * Main Constructor for CodeCleaner
+     * 
+     * @param codeTree The CodeTree object being read.
+     */
     public CodeCleaner(final CodeTree codeTree) {
         this.codeTree = codeTree;
     }
 
+    /**
+     * Grabs the name of the class to be cleaned from the mutable metadata, and passes it to the other implementation.
+     * 
+     * @param classMetadata The mutable class metadata being passed in.
+     */
     public void cleanClass(final MutableClassInfo classMetadata) {
         doCleanClass(
                 classMetadata.getName()
         );
     }
 
+    /**
+     * METHOD EXPLAINATION GOES HERE
+     * 
+     * @param className The name of the class being cleaned.
+     */
     private void doCleanClass(final String className) {
         MutableClassInfo info = codeTree.getClassMetadataFor(className);
         if (info == null || info.isResolved())
@@ -64,6 +82,13 @@ public class CodeCleaner {
         info.setResolved(true);
     }
 
+    /**
+     * METHOD EXPLAINATION GOES HERE
+     * 
+     * @param methodMetadata The mutable method metadata.
+     * @param className The name of the class that pertains to the method.
+     * @return Returns a mutable method reference metadata.
+     */
     private MutableMethodReferenceInfo doWalkBouncers(final MutableMethodInfo methodMetadata, String className) {
         final MutableClassInfo classMetadata = codeTree.getClassMetadataFor(className);
         if (!classMetadata.getMethods().isEmpty()) {
@@ -136,10 +161,25 @@ public class CodeCleaner {
         return null;
     }
 
+    /**
+     * METHOD EXPLAINATION GOES HERE
+     * 
+     * @param methodMetadata The mutable method metadata.
+     * @param ownerName The name of the owning class.
+     * @return Returns a Set of method references of overrides.
+     */
     private Set<MutableMethodReferenceInfo> findOverrides(MutableMethodInfo methodMetadata, String ownerName) {
         return doFindOverrides(methodMetadata, ownerName, new LinkedHashSet<>());
     }
 
+    /**
+     * METHOD EXPLAINATION GOES HERE
+     * 
+     * @param methodMetadata The mutable method metadata.
+     * @param className The name of the class that the method exists in.
+     * @param overrides A Set of override method references.
+     * @return Returns a Set of method references of overrides.
+     */
     private Set<MutableMethodReferenceInfo> doFindOverrides(MutableMethodInfo methodMetadata, String className, Set<MutableMethodReferenceInfo> overrides) {
         if (methodMetadata.isStatic() || methodMetadata.isPrivate() || methodMetadata.getMethod().getName().startsWith("<")) {
             return overrides;
@@ -191,6 +231,13 @@ public class CodeCleaner {
         return overrides;
     }
 
+    /**
+     * METHOD EXPLAINATION GOES HERE
+     * 
+     * @param mtd The method metadata.
+     * @param owner The owning class string identifier.
+     * @return Returns the first found method override reference.
+     */
     private MutableMethodReferenceInfo doFindFirstOverride(MutableMethodInfo mtd, String owner) {
         if (mtd.isStatic() || mtd.isPrivate() || mtd.getMethod().getName().startsWith("<"))
             return null;
@@ -238,6 +285,11 @@ public class CodeCleaner {
         return null;
     }
 
+    /**
+     * METHOD EXPLAINATION GOES HERE
+     * 
+     * @param cls The class metadata for trying to resolve the abstract root class.
+     */
     private void resolveAbstract(MutableClassInfo cls) {
         Map<String, String> abs = new HashMap<>();
         Set<String> known = new TreeSet<>();
@@ -308,6 +360,11 @@ public class CodeCleaner {
         }
     }
 
+    /**
+     * METHOD EXPLAINATION GOES HERE
+     * 
+     * @param mutableClassInfo The class metadata for trying to resolve the root record class.
+     */
     private void resolveRecord(MutableClassInfo mutableClassInfo) {
         if (!mutableClassInfo.isRecord() || mutableClassInfo.getRecords().isEmpty() || mutableClassInfo.getFields().isEmpty())
             return;

@@ -13,15 +13,26 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 public class CodeTree {
+    
     private final Set<String> noneLibraryClasses = new LinkedHashSet<>();
     private final Map<String, byte[]> sources = new HashMap<>();
 
+    /**
+     * A map consisting of the class string identifier as the key and the Mutable class metadata as the value.
+     */
     private final Map<String, MutableClassInfo> parsedClasses = new HashMap<>();
 
     public Set<String> getNoneLibraryClasses() {
         return noneLibraryClasses;
     }
 
+    /**
+     * METHOD EXPLAINATION GOES HERE
+     * 
+     * @param path The file path to the file being loaded.
+     * @param library If the loaded file is a library or not.
+     * @throws IOException Throws an IOException if it couldn't read the file using the ZipInputStream.
+     */
     public final void load(final Path path, final boolean library) throws IOException {
         try (ZipInputStream zipInputStream = new ZipInputStream(Files.newInputStream(path))) {
             ZipEntry entry;
@@ -41,6 +52,12 @@ public class CodeTree {
         }
     }
 
+    /**
+     * METHOD EXPLAINATION GOES HERE
+     * 
+     * @param cls The class identifier name.
+     * @return Returns the mutable metadata for the class.
+     */
     public MutableClassInfo getClassMetadataFor(String cls) {
         MutableClassInfo classMetadata = parsedClasses.get(cls);
         if (classMetadata == null) {
@@ -67,6 +84,13 @@ public class CodeTree {
         return new MutableClassInfo(classNode);
     }
 
+    /**
+     * METHOD EXPLAINATION GOES HERE
+     * 
+     * @param is The input stream thats being read.
+     * @return Returns the read file in the form of a byte array of data.
+     * @throws IOException Throws an IOException if the data cannot be read.
+     */
     private static byte[] readStreamFully(InputStream is) throws IOException {
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(Math.max(8192, is.available()));
         byte[] buffer = new byte[8192];
