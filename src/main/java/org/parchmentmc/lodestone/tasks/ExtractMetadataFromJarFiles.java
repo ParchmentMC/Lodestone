@@ -23,11 +23,27 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
+/**
+ * The ExtractMetadataFromJarFiles task extracts metadata from a Minecraft client jar file and any required library
+ * jar files, and outputs the metadata as a JSON file.
+ */
 public abstract class ExtractMetadataFromJarFiles extends ExtractMetadataTask {
+
+    /**
+     * Constructs a new ExtractMetadataFromJarFiles task and sets the default output location for the metadata JSON file.
+     */
     public ExtractMetadataFromJarFiles() {
         this.getOutput().convention(getProject().getLayout().getBuildDirectory().dir(getName()).map(d -> d.file("metadata.json")));
     }
 
+    /**
+     * Extracts metadata from the given Minecraft client jar file and any required library jar files, and returns
+     * a SourceMetadata object that represents the metadata for the client jar and its contents.
+     *
+     * @param clientJarFile the Minecraft client jar file to extract metadata from
+     * @return a SourceMetadata object that represents the metadata for the client jar and its contents
+     * @throws IOException if an error occurs while reading or parsing the jar files
+     */
     @Override
     protected SourceMetadata extractMetadata(File clientJarFile) throws IOException {
         final File librariesDirectory = this.getLibraries().getAsFile().get();
@@ -68,10 +84,23 @@ public abstract class ExtractMetadataFromJarFiles extends ExtractMetadataTask {
         return adaptClassTypes(baseDataSet);
     }
 
+    /**
+     * Adapts the class types in the given SourceMetadata object to be compatible with the Minecraft data model.
+     *
+     * @param sourceMetadata the SourceMetadata object to adapt
+     * @return the adapted SourceMetadata object
+     */
     private static SourceMetadata adaptClassTypes(final SourceMetadata sourceMetadata) {
         return adaptInnerOuterClassList(sourceMetadata);
     }
 
+    /**
+     * Adapts the inner and outer class lists in the given SourceMetadata object to be compatible with the Minecraft
+     * data model.
+     *
+     * @param sourceMetadata the SourceMetadata object to adapt
+     * @return the adapted SourceMetadata object
+     */
     private static SourceMetadata adaptInnerOuterClassList(final SourceMetadata sourceMetadata) {
         final Map<Named, ClassMetadataBuilder> namedClassMetadataMap = sourceMetadata.getClasses()
                 .stream()
@@ -100,6 +129,11 @@ public abstract class ExtractMetadataFromJarFiles extends ExtractMetadataTask {
                 .build();
     }
 
+    /**
+     * Returns the input directory containing the required library jar files for the task.
+     *
+     * @return the input directory containing the required library jar files for the task
+     */
     @InputDirectory
     public abstract DirectoryProperty getLibraries();
 }

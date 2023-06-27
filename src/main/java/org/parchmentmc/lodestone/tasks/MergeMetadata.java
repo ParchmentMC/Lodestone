@@ -21,15 +21,33 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * It provides methods for merging metadata in Minecraft versions.
+ */
 public abstract class MergeMetadata extends MinecraftVersionTask {
 
+    /**
+     * Constructs a new {@code MergeMetadata} object.
+     * It sets the default output file for merged metadata.
+     */
     public MergeMetadata() {
         this.getOutput().convention(getProject().getLayout().getBuildDirectory().dir(getName()).map(d -> d.file("merged.json")));
     }
 
+    /**
+     * Returns the output file property for the merged metadata.
+     *
+     * @return the output file property
+     */
     @OutputFile
     public abstract RegularFileProperty getOutput();
 
+    /**
+     * Adapts the types of the source metadata by mapping obfuscated names to Mojang names.
+     *
+     * @param sourceMetadata the source metadata to adapt
+     * @return the adapted source metadata
+     */
     private static SourceMetadata adaptTypes(final SourceMetadata sourceMetadata) {
         final Map<String, String> obfToMojClassNameMap = new LinkedHashMap<>();
         final Map<String, MethodMetadata> obfKeyToMojMethodNameMap = new LinkedHashMap<>();
@@ -109,6 +127,14 @@ public abstract class MergeMetadata extends MinecraftVersionTask {
         return bouncerRemappedDataBuilder.build();
     }
 
+    /**
+     * Adapts the signatures of a class metadata by mapping obfuscated names to Mojang names.
+     *
+     * @param classMetadata the class metadata to adapt
+     * @param obfToMojNameMap the map of obfuscated names to Mojang names
+     * @param remapper the ASMRemapper used for remapping
+     * @return the adapted class metadata
+     */
     private static ClassMetadata adaptSignatures(
             final ClassMetadata classMetadata,
             final Map<String, String> obfToMojNameMap,
@@ -273,6 +299,15 @@ public abstract class MergeMetadata extends MinecraftVersionTask {
         return classMetadataBuilder.build();
     }
 
+    /**
+     * Adapts the references of a class metadata by mapping obfuscated names to Mojang names.
+     *
+     * @param classMetadata the class metadata to adapt
+     * @param obfKeyToMojMethodNameMap the map of obfuscated method names to Mojang method names
+     * @param obfKeyToMojFieldNameMap the map of obfuscated field names to Mojang field names
+     * @param remapper the ASMRemapper used for remapping
+     * @return the adapted class metadata
+     */
     private static ClassMetadata adaptReferences(
             final ClassMetadata classMetadata,
             final Map<String, MethodMetadata> obfKeyToMojMethodNameMap,
@@ -385,6 +420,14 @@ public abstract class MergeMetadata extends MinecraftVersionTask {
         return classMetadataBuilder.build();
     }
 
+    /**
+     * Creates a remapped reference using the given ASMRemapper and method metadata.
+     *
+     * @param remapper The ASMRemapper used for remapping the signature.
+     * @param methodMetadata The method metadata containing information about the method.
+     * @return A ReferenceBuilder representing the remapped reference.
+     * @throws IllegalStateException if the obfuscated name is missing in the method signature.
+     */
     private static ReferenceBuilder createRemappedReference(final ASMRemapper remapper, final BaseReference methodMetadata) {
         final ReferenceBuilder targetBuilder = ReferenceBuilder.create()
                 .withOwner(methodMetadata.getOwner())
@@ -410,6 +453,13 @@ public abstract class MergeMetadata extends MinecraftVersionTask {
         return targetBuilder;
     }
 
+    /**
+     * Collects the obfuscated class names and their corresponding Mojang names recursively
+     * from the given class metadata and stores them in the provided map.
+     *
+     * @param classMetadata the class metadata to collect names from
+     * @param obfToMojMap the map to store the collected names
+     */
     private static void collectClassNames(final ClassMetadata classMetadata, final Map<String, String> obfToMojMap) {
         obfToMojMap.put(
                 classMetadata.getName().getObfuscatedName().orElseThrow(() -> new IllegalStateException("Missing obfuscated name.")),
@@ -419,6 +469,12 @@ public abstract class MergeMetadata extends MinecraftVersionTask {
         classMetadata.getInnerClasses().forEach(innerClassMetadata -> collectClassNames(innerClassMetadata, obfToMojMap));
     }
 
+    /**
+     * Recursively collects the method names from the given ClassMetadata and populates them into the objKeyToMojNameMap.
+     *
+     * @param classMetadata       The ClassMetadata to collect method names from.
+     * @param objKeyToMojNameMap  The map to store the method names, where the keys are method keys and the values are MethodMetadata objects.
+     */
     private static void collectMethodNames(final ClassMetadata classMetadata, final Map<String, MethodMetadata> objKeyToMojNameMap) {
         classMetadata.getMethods().forEach(methodMetadata -> objKeyToMojNameMap.put(
                 buildMethodKey(methodMetadata),
@@ -428,6 +484,12 @@ public abstract class MergeMetadata extends MinecraftVersionTask {
         classMetadata.getInnerClasses().forEach(innerClassMetadata -> collectMethodNames(innerClassMetadata, objKeyToMojNameMap));
     }
 
+    /**
+     * Recursively collects the field names from the given ClassMetadata and populates them into the objKeyToMojNameMap.
+     *
+     * @param classMetadata       The ClassMetadata to collect field names from.
+     * @param objKeyToMojNameMap  The map to store the field names, where the keys are field keys and the values are FieldMetadata objects.
+     */
     private static void collectFieldNames(final ClassMetadata classMetadata, final Map<String, FieldMetadata> objKeyToMojNameMap) {
         classMetadata.getFields().forEach(fieldMetadata -> objKeyToMojNameMap.put(
                 buildFieldKey(fieldMetadata),
@@ -437,6 +499,13 @@ public abstract class MergeMetadata extends MinecraftVersionTask {
         classMetadata.getInnerClasses().forEach(innerClassMetadata -> collectFieldNames(innerClassMetadata, objKeyToMojNameMap));
     }
 
+    /**
+     * Builds a method key based on the given MethodMetadata.
+     *
+     * @param methodMetadata  The MethodMetadata object containing the necessary information.
+     * @return A string representing the method key in the format "className/methodNamemethodDesc".
+     * @throws IllegalStateException if any obfuscated name in the MethodMetadata is missing.
+     */
     private static String buildMethodKey(final MethodMetadata methodMetadata) {
         return buildMethodKey(
                 methodMetadata.getOwner().getObfuscatedName().orElseThrow(() -> new IllegalStateException("Missing obfuscated owner name.")),
@@ -445,6 +514,13 @@ public abstract class MergeMetadata extends MinecraftVersionTask {
         );
     }
 
+    /**
+     * Builds a method key based on the given Reference object.
+     *
+     * @param reference  The Reference object containing the necessary information.
+     * @return A string representing the method key in the format "className/methodNamemethodDesc".
+     * @throws IllegalStateException if any obfuscated name in the Reference is missing.
+     */
     private static String buildMethodKey(final Reference Reference) {
         return buildMethodKey(
                 Reference.getOwner().getObfuscatedName().orElseThrow(() -> new IllegalStateException("Missing obfuscated owner name.")),
@@ -453,6 +529,14 @@ public abstract class MergeMetadata extends MinecraftVersionTask {
         );
     }
 
+    /**
+     * Builds a method key based on the given class name, method name, and method descriptor.
+     *
+     * @param className    The obfuscated class name.
+     * @param methodName   The obfuscated method name.
+     * @param methodDesc   The obfuscated method descriptor.
+     * @return A string representing the method key in the format "className/methodNamemethodDesc".
+     */
     private static String buildMethodKey(final String className, final String methodName, final String methodDesc) {
         return String.format("%s/%s%s",
                 className,
@@ -460,6 +544,13 @@ public abstract class MergeMetadata extends MinecraftVersionTask {
                 methodDesc);
     }
 
+    /**
+     * Builds a field key based on the given FieldMetadata.
+     *
+     * @param fieldMetadata  The FieldMetadata object containing the necessary information.
+     * @return A string representing the field key in the format "className/fieldNamefieldDesc".
+     * @throws IllegalStateException if any obfuscated name in the FieldMetadata is missing.
+     */
     private static String buildFieldKey(final FieldMetadata fieldMetadata) {
         return buildFieldKey(
                 fieldMetadata.getOwner().getObfuscatedName().orElseThrow(() -> new IllegalStateException("Missing obfuscated owner name.")),
@@ -468,6 +559,13 @@ public abstract class MergeMetadata extends MinecraftVersionTask {
         );
     }
 
+    /**
+     * Builds a field key based on the given Reference object.
+     *
+     * @param reference  The Reference object containing the necessary information.
+     * @return A string representing the field key in the format "className/fieldNamefieldDesc".
+     * @throws IllegalStateException if any obfuscated name in the Reference is missing.
+     */
     private static String buildFieldKey(final Reference fieldMetadata) {
         return buildFieldKey(
                 fieldMetadata.getOwner().getObfuscatedName().orElseThrow(() -> new IllegalStateException("Missing obfuscated owner name.")),
@@ -476,6 +574,14 @@ public abstract class MergeMetadata extends MinecraftVersionTask {
         );
     }
 
+    /**
+     * Builds a field key based on the given class name, field name, and field descriptor.
+     *
+     * @param className    The obfuscated class name.
+     * @param fieldName    The obfuscated field name.
+     * @param fieldDesc    The obfuscated field descriptor.
+     * @return A string representing the field key in the format "className/fieldNamefieldDesc".
+     */
     private static String buildFieldKey(final String className, final String fieldName, final String fieldDesc) {
         return String.format("%s/%s%s",
                 className,
@@ -483,6 +589,11 @@ public abstract class MergeMetadata extends MinecraftVersionTask {
                 fieldDesc);
     }
 
+    /**
+     * Executes the task to merge source metadata from the left and right sources, adapt the types, and write the merged metadata to the output file.
+     *
+     * @throws IOException if an I/O error occurs during file operations.
+     */
     @SuppressWarnings("ResultOfMethodCallIgnored")
     @TaskAction
     void execute() throws IOException {
@@ -508,9 +619,19 @@ public abstract class MergeMetadata extends MinecraftVersionTask {
         fileWriter.close();
     }
 
+    /**
+     * Returns the property representing the left source file for merging.
+     *
+     * @return The property representing the left source file.
+     */
     @InputFile
     public abstract RegularFileProperty getLeftSource();
 
+    /**
+     * Returns the property representing the right source file for merging.
+     *
+     * @return The property representing the right source file.
+     */
     @InputFile
     public abstract RegularFileProperty getRightSource();
 }

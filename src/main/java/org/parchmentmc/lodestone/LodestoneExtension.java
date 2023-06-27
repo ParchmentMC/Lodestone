@@ -15,10 +15,20 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
 
+/**
+ * LodestoneExtension is a class that represents the extension configuration for the Lodestone plugin.
+ * It provides properties and methods to configure and retrieve Minecraft versions.
+ */
 public class LodestoneExtension {
     private final Project project;
     private final Property<String> mcVersion;
 
+    /**
+     * Constructs a new LodestoneExtension with the specified project and object factory.
+     *
+     * @param project The Gradle project associated with the extension.
+     * @param factory The object factory used to create properties.
+     */
     @Inject
     public LodestoneExtension(Project project, ObjectFactory factory) {
         this.project = project;
@@ -26,12 +36,23 @@ public class LodestoneExtension {
         this.mcVersion = factory.property(String.class).convention("latest");
     }
 
+    /**
+     * Returns the property representing the Minecraft version.
+     *
+     * @return The property containing the Minecraft version.
+     */
     public Property<String> getMcVersion() {
         return mcVersion;
     }
 
     private String resolvedMcVersion;
 
+    /**
+     * Returns a provider for the resolved Minecraft version.
+     * The provider lazily resolves and provides the Minecraft version based on the configured Minecraft version property.
+     *
+     * @return The provider for the resolved Minecraft version.
+     */
     public Provider<String> getResolvedMcVersion() {
         return mcVersion.map(mc -> {
             if (resolvedMcVersion != null)
