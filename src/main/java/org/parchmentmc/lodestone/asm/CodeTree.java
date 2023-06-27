@@ -27,7 +27,7 @@ public class CodeTree {
     }
 
     /**
-     * METHOD EXPLAINATION GOES HERE
+     * Loads all class files for a given file path and stores them in the 'sources' map as byte arrays.
      * 
      * @param path The file path to the file being loaded.
      * @param library If the loaded file is a library or not.
@@ -53,7 +53,7 @@ public class CodeTree {
     }
 
     /**
-     * METHOD EXPLAINATION GOES HERE
+     * Retrieves the metadata for a given class name, creating it if necessary, and returns a MutableClassInfo object.
      * 
      * @param cls The class identifier name.
      * @return Returns the mutable metadata for the class.
@@ -85,7 +85,7 @@ public class CodeTree {
     }
 
     /**
-     * METHOD EXPLAINATION GOES HERE
+     * Reads an InputStream fully and returns the data as a byte array.
      * 
      * @param is The input stream thats being read.
      * @return Returns the read file in the form of a byte array of data.

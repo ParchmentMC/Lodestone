@@ -6,6 +6,13 @@ import org.parchmentmc.feather.named.NamedBuilder;
 import org.parchmentmc.lodestone.asm.MutableMethodReferenceInfo;
 
 public class ReferenceConverter {
+
+    /**
+     * Converts the given MutableMethodReferenceInfo object into a Reference object.
+     *
+     * @param refInfo the MutableMethodReferenceInfo object to convert
+     * @return a Reference object representing the converted MutableMethodReferenceInfo object, or null if the input is null
+     */
     public Reference convert(final MutableMethodReferenceInfo refInfo) {
         if (refInfo == null)
             return null;

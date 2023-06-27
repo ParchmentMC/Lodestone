@@ -77,6 +77,13 @@ public class MutableClassInfo implements MutableSecuredObjectInfo {
         }
     }
 
+    /**
+     * Returns the target method handle of the lambda expression represented by the given InvokeDynamicInsnNode.
+     *
+     * @param idn the InvokeDynamicInsnNode representing the lambda expression
+     * @return the target method handle of the lambda expression, or null if the given InvokeDynamicInsnNode does not represent a lambda expression
+     * @throws NullPointerException if the given InvokeDynamicInsnNode is null
+     */
     private Handle getLambdaTarget(InvokeDynamicInsnNode idn) {
         if (LAMBDA_METAFACTORY.equals(idn.bsm) && idn.bsmArgs != null && idn.bsmArgs.length == 3 && idn.bsmArgs[1] instanceof Handle) {
             return ((Handle) idn.bsmArgs[1]);
