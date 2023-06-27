@@ -8,6 +8,13 @@ import org.parchmentmc.lodestone.asm.MutableClassInfo;
 
 public class ClassConverter {
 
+    /**
+     * Converts the given MutableClassInfo object into a ClassMetadata object.
+     *
+     * @param classInfo the MutableClassInfo object to convert
+     * @return a ClassMetadata object representing the converted MutableClassInfo object
+     * @throws ReferenceConversionException if an error occurs while converting a reference in the MutableClassInfo object
+     */
     public ClassMetadata convert(final MutableClassInfo classInfo) {
         final MethodConverter methodConverter = new MethodConverter();
         final FieldConverter fieldConverter = new FieldConverter();

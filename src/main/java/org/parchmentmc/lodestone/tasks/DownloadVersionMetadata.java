@@ -18,12 +18,28 @@ import java.nio.channels.ReadableByteChannel;
 
 import static java.nio.file.StandardOpenOption.*;
 
+/**
+ * The DownloadVersionMetadata task downloads the version metadata for a given Minecraft version, 
+ * including the JSON file that contains information about the version's client jar, server jar, 
+ * and any required libraries.
+ */
 public abstract class DownloadVersionMetadata extends MinecraftVersionTask {
+
+    /**
+     * Constructs a new DownloadVersionMetadata task and sets the default input and output locations for the downloaded
+     * version metadata files.
+     */
     public DownloadVersionMetadata() {
         this.getInput().convention(getProject().getLayout().getBuildDirectory().dir(getName()).map(d -> d.file("launcher.json")));
         this.getOutput().convention(getProject().getLayout().getBuildDirectory().dir(getName()).flatMap(d -> d.file(this.getMcVersion().map(s -> s + ".json"))));
     }
 
+    /**
+     * Downloads the version metadata for the given Minecraft version, including the JSON file that contains
+     * information about the version's client jar, server jar, and any required libraries.
+     *
+     * @throws IOException if an error occurs while downloading or saving the version metadata files
+     */
     @SuppressWarnings("ResultOfMethodCallIgnored")
     @TaskAction
     void download() throws IOException {
@@ -56,6 +72,14 @@ public abstract class DownloadVersionMetadata extends MinecraftVersionTask {
         }
     }
 
+    /**
+     * Resolves the Minecraft version to download based on the provided Minecraft version string and the launcher
+     * manifest.
+     *
+     * @param mcVersion         the Minecraft version string to resolve
+     * @param launcherManifest  the launcher manifest containing the available Minecraft versions
+     * @return the resolved Minecraft version string
+     */
     public static String resolveMinecraftVersion(String mcVersion, LauncherManifest launcherManifest) {
         switch (mcVersion) {
             case "latest_snapshot":
@@ -82,9 +106,19 @@ public abstract class DownloadVersionMetadata extends MinecraftVersionTask {
         return mcVersion;
     }
 
+    /**
+     * Returns the input file property for the launcher manifest JSON file.
+     *
+     * @return the input file property for the launcher manifest JSON file
+     */
     @InputFile
     public abstract RegularFileProperty getInput();
 
+    /**
+     * Returns the output file property for the downloaded version metadata file.
+     *
+     * @return the output file property for the downloaded version metadata file
+     */
     @OutputFile
     public abstract RegularFileProperty getOutput();
 }

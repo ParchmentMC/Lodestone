@@ -14,18 +14,38 @@ import java.util.function.Consumer;
 
 public class CodeCleaner {
 
+    /**
+     * The CodeTree which holds the various classes and their mutable metadata representations.
+     */
     private final CodeTree codeTree;
 
+    /**
+     * Main Constructor for CodeCleaner
+     * 
+     * @param codeTree The CodeTree object being read.
+     */
     public CodeCleaner(final CodeTree codeTree) {
         this.codeTree = codeTree;
     }
 
+    /**
+     * Grabs the name of the class to be cleaned from the mutable metadata, and passes it to the other implementation.
+     * 
+     * @param classMetadata The mutable class metadata being passed in.
+     */
     public void cleanClass(final MutableClassInfo classMetadata) {
         doCleanClass(
                 classMetadata.getName()
         );
     }
 
+    /**
+     * Cleans up the metadata for a class.
+     * The method does this by resolving bouncer methods and resolving abstract methods.
+     * This method also resolves record classes.
+     * 
+     * @param className The name of the class being cleaned.
+     */
     private void doCleanClass(final String className) {
         MutableClassInfo info = codeTree.getClassMetadataFor(className);
         if (info == null || info.isResolved())
@@ -64,6 +84,13 @@ public class CodeCleaner {
         info.setResolved(true);
     }
 
+    /**
+     * Recursively walks up the class hierarchy to find the final implementation of a method by following bouncer methods.
+     * 
+     * @param methodMetadata The mutable method metadata.
+     * @param className The name of the class that pertains to the method.
+     * @return Returns a mutable method reference metadata.
+     */
     private MutableMethodReferenceInfo doWalkBouncers(final MutableMethodInfo methodMetadata, String className) {
         final MutableClassInfo classMetadata = codeTree.getClassMetadataFor(className);
         if (!classMetadata.getMethods().isEmpty()) {
@@ -136,10 +163,26 @@ public class CodeCleaner {
         return null;
     }
 
+    /**
+     * Used to find the all methods that override the given method within the class hierarchy.
+     * Providing an empty set of method references.
+     * 
+     * @param methodMetadata The mutable method metadata.
+     * @param ownerName The name of the owning class.
+     * @return Returns a Set of method references of overrides.
+     */
     private Set<MutableMethodReferenceInfo> findOverrides(MutableMethodInfo methodMetadata, String ownerName) {
         return doFindOverrides(methodMetadata, ownerName, new LinkedHashSet<>());
     }
 
+    /**
+     * Used to find the all methods that override the given method within the class hierarchy.
+     * 
+     * @param methodMetadata The mutable method metadata.
+     * @param className The name of the class that the method exists in.
+     * @param overrides A Set of override method references.
+     * @return Returns a Set of method references of overrides.
+     */
     private Set<MutableMethodReferenceInfo> doFindOverrides(MutableMethodInfo methodMetadata, String className, Set<MutableMethodReferenceInfo> overrides) {
         if (methodMetadata.isStatic() || methodMetadata.isPrivate() || methodMetadata.getMethod().getName().startsWith("<")) {
             return overrides;
@@ -191,6 +234,13 @@ public class CodeCleaner {
         return overrides;
     }
 
+    /**
+     * Finds the first concrete implementation of the given method within the class hierarchy.
+     * 
+     * @param mtd The method metadata.
+     * @param owner The name of the class that potentially overrides the method as its arguments
+     * @return Returns the first found method override reference.
+     */
     private MutableMethodReferenceInfo doFindFirstOverride(MutableMethodInfo mtd, String owner) {
         if (mtd.isStatic() || mtd.isPrivate() || mtd.getMethod().getName().startsWith("<"))
             return null;
@@ -238,6 +288,12 @@ public class CodeCleaner {
         return null;
     }
 
+    /**
+     * Resolves abstract methods in the class hierarchy, it does this by identifying the abstract methods 
+     * concrete implementations and creating appropriate method references.
+     * 
+     * @param cls The class metadata for trying to resolve the abstract root class.
+     */
     private void resolveAbstract(MutableClassInfo cls) {
         Map<String, String> abs = new HashMap<>();
         Set<String> known = new TreeSet<>();
@@ -308,6 +364,11 @@ public class CodeCleaner {
         }
     }
 
+    /**
+     * Copies over the record getters to the record info.
+     * 
+     * @param mutableClassInfo The class metadata for trying to copy over the record getters.
+     */
     private void resolveRecord(MutableClassInfo mutableClassInfo) {
         if (!mutableClassInfo.isRecord() || mutableClassInfo.getRecords().isEmpty() || mutableClassInfo.getFields().isEmpty())
             return;

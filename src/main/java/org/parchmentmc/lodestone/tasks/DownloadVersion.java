@@ -22,12 +22,26 @@ import java.util.Objects;
 
 import static java.nio.file.StandardOpenOption.*;
 
+/**
+ * The DownloadVersion task downloads the necessary files for a Minecraft version to be run, including the Minecraft
+ * client jar, the server jar, and any libraries required by those jars.
+ */
 public abstract class DownloadVersion extends MinecraftVersionTask {
+
+    /**
+     * Constructs a new DownloadVersion task and sets the default input and output locations for the downloaded files.
+     */
     public DownloadVersion() {
         this.getInput().convention(getProject().getLayout().getBuildDirectory().dir(getName()).flatMap(d -> d.file(this.getMcVersion().map(s -> s + ".json"))));
         this.getOutput().convention(getProject().getLayout().getBuildDirectory().dir(getName()).flatMap(s -> s.dir(this.getMcVersion())));
     }
 
+    /**
+     * Downloads the necessary files for the Minecraft version to be run, including the Minecraft client jar, the
+     * server jar, and any libraries required by those jars.
+     *
+     * @throws IOException if an error occurs while downloading or saving the files
+     */
     @SuppressWarnings("ResultOfMethodCallIgnored")
     @TaskAction
     void download() throws IOException {
@@ -75,9 +89,19 @@ public abstract class DownloadVersion extends MinecraftVersionTask {
         }
     }
 
+    /**
+     * Returns the input file property for the version manifest JSON file.
+     *
+     * @return the input file property for the version manifest JSON file
+     */
     @InputFile
     public abstract RegularFileProperty getInput();
 
+    /**
+     * Returns the output directory property for the downloaded files.
+     *
+     * @return the output directory property for the downloaded files
+     */
     @OutputDirectory
     public abstract DirectoryProperty getOutput();
 }
