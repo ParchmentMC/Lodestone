@@ -16,8 +16,7 @@ public class RecordConverter {
     public RecordMetadata convert(final MutableClassInfo classInfo, final MutableRecordInfo recordInfo) {
         final ReferenceConverter referenceConverter = new ReferenceConverter();
 
-        final MutableFieldInfo mutableFieldInfo = classInfo.getFields().get(recordInfo.getName());
-        final MutableMethodReferenceInfo mutableMethodReferenceInfo = getGetter(mutableFieldInfo);
+        final MutableMethodReferenceInfo mutableMethodReferenceInfo = getGetter(recordInfo);
 
         final Named owner = NamedBuilder.create().withObfuscated(classInfo.getName()).build();
         return RecordMetadataBuilder.create()
@@ -35,8 +34,8 @@ public class RecordConverter {
                 .build();
     }
 
-    private static MutableMethodReferenceInfo getGetter(MutableFieldInfo fieldInfo) {
-        final Iterator<MutableMethodReferenceInfo> iterator = fieldInfo.getGetters().iterator();
+    private static MutableMethodReferenceInfo getGetter(MutableRecordInfo recordInfo) {
+        final Iterator<MutableMethodReferenceInfo> iterator = recordInfo.getGetters().iterator();
         MutableMethodReferenceInfo result = null;
         while (iterator.hasNext()) {
             result = iterator.next();
