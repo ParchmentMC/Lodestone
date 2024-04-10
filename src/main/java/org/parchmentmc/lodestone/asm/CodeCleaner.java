@@ -319,6 +319,33 @@ public class CodeCleaner {
                         mutableFieldInfo.getGetters()
                 );
             }
+
+            if (mutableRecordInfo.getGetters().isEmpty()) {
+                // If no getters were attached to the fields by the bytecode heuristic, then fallback to a simple
+                // heuristic: find a single method which has no parameters, and whose return type matches the field type
+                // (ignoring the method name, since we're dealing with obfuscated names here)
+                // If there's more than one matching method, bail out: we can't be sure which one is the correct one
+
+                String targetDesc = "()" + mutableRecordInfo.getDesc();
+                MutableMethodInfo foundGetter = null;
+                int found = 0;
+                for (MutableMethodInfo methodInfo : mutableClassInfo.getMethods().values()) {
+                    if (targetDesc.equals(methodInfo.getMethod().getDesc())) {
+                        foundGetter = methodInfo;
+                        found++;
+                    }
+                }
+
+                if (found == 1) {
+                    mutableRecordInfo.getGetters().add(foundGetter.getMethod());
+                    // Don't add to the field getters for now, so the field getters are always those determined by the
+                    // bytecode heuristic (See constructor for MutableMethodInfo)
+                }
+            }
+
+            if (mutableRecordInfo.getGetters().isEmpty()) {
+                throw new RuntimeException("Failed to find getter for record component " + mutableRecordInfo.getName() + " in class " + mutableClassInfo.getName());
+            }
         }
     }
 
